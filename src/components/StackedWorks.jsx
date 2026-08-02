@@ -20,27 +20,37 @@ import WorkCard from './WorkCard'
    TUNING — every number that shapes the reveal lives here.
    ===========================================================================
 
-   THE LAYOUT
-   ----------
+   THE LAYOUT — it is a DECK, not a list
+   -------------------------------------
    The whole first screen is pinned from scroll 0. Nothing in it scrolls; the
-   cards move within it. Every card has exactly two resting places:
+   cards move within it.
+
+   Every card is full size at all times and NEVER resizes. Card k+1 is drawn on
+   top of card k, offset down by exactly headerH, so all you see of a covered
+   card is its header strip. A card looks "expanded" only because the next card
+   is still far below it, leaving its excerpt uncovered:
 
      ┌──────────────────────────────┐  ← TOP_PAD
-     │ 2026  docked row             │     yDock(k) = TOP_PAD + k * rowH
-     │ 2025  docked row             │     cards that already had their turn
+     │ 2026  header strip           │  ▄ docked, covered by 2025
+     │ 2025  header strip           │  ▄ docked, covered by 2024
+     │ 2024  header strip           │  ← ACTIVE: nothing covers it, so its
+     │       excerpt  ▪ preview     │    excerpt shows all the way down to
+     │       tags                   │    where 2020 waits
      ├──────────────────────────────┤
-     │ 2024                         │
-     │   ACTIVE — expanded, fills   │     top  = yDock(k)
-     │   the gap between the two    │     bot  = just above the waiting stack
-     │   stacks                     │
-     ├──────────────────────────────┤
-     │ 2020  waiting row            │     yWait(k) = waitTop + k * rowH
-     │ 2019  waiting row (peeks)    │     never moves until its turn
+     │ 2020  header strip           │  ▄ waiting, covered by 2019
+     │ 2019  header strip (peeks)   │  ▄ waiting
      └──────────────────────────────┘  ← viewport bottom
 
-   A card travels from yWait(k) to yDock(k) exactly once, growing upward from a
-   near-fixed bottom edge as it goes. The rows below it do not move — that is
-   the defining property of this interaction.
+     yDock(k) = TOP_PAD + k * headerH      yWait(k) = waitTop + k * headerH
+
+   A card travels from yWait(k) to yDock(k) exactly once. Two consequences:
+
+     · Card k "collapses" for free. It doesn't shrink — card k+1 rises over it
+       until only its header shows.
+     · The whole reveal is a set of translateYs on opaque layers. No height
+       animation, no layout, no content repaint. That is why it stays smooth.
+
+   The cards still waiting below never move until their turn.
 
    THE TIMELINE (in "units"; UNIT_VH converts a unit to scroll distance)
 
@@ -65,18 +75,20 @@ const TUNING = {
   INTRO_FADE_TO: 0.74, // unit by which it is fully gone (card 0 covers it)
   INTRO_BLUR: 10, // px of blur at full fade
 
-  TOP_PAD: 24, // px above the first docked row
-  BOTTOM_PAD: 28, // px below the active card, at minimum
-  ACTIVE_GAP: 16, // px between the active card's bottom and the waiting stack
-  PEEK: 44, // px of the LAST waiting row left visible on first paint.
-  //          Raise it to show more of the bottom row, lower it to give the
-  //          intro more room. Set it to rowH to fit every row fully.
+  TOP_PAD: 24, // px above the first docked card
+  BOTTOM_PAD: 28, // px below the last card when it is active
+  PEEK: 44, // px of the LAST waiting card left visible on first paint.
+  //          Raise it to show more of the bottom card, lower it to give the
+  //          intro more room. Set it to headerH to show every header fully.
 
-  ROW_RATIO: 0.093, // collapsed row height as a share of viewport height
-  ROW_MIN: 60,
-  ROW_MAX: 88,
-  WAIT_TOP_MIN_RATIO: 0.3, // never let the waiting stack start above this
-  ACTIVE_MIN_H: 220, // px floor for the expanded card
+  // The header strip is both the visible sliver of a covered card AND the
+  // offset between cards in the deck. Everything below the strip is hidden by
+  // the next card, which is what makes the overlap read as stacked paper.
+  HEADER_RATIO: 0.093, // as a share of viewport height
+  HEADER_MIN: 60,
+  HEADER_MAX: 88,
+  WAIT_TOP_MIN_RATIO: 0.3, // never let the waiting deck start above this
+  CARD_MIN_H: 220, // px floor for a card
 }
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
@@ -116,14 +128,19 @@ function timelineUnits(total, { LEAD, SLOT, RAMP, TAIL }) {
 /* ------------------------------------------------------------------------ */
 
 /**
- * One card, positioned and sized entirely from scroll position.
+ * One card in the deck. Its height never changes — only `y` does.
  *
- * `y` (a compositor transform) carries the travel; only `height` triggers
- * layout, and because every card is absolutely positioned, that layout is
- * scoped to the card itself — resizing one never reflows the others.
+ * The card looks collapsed whenever the NEXT card is drawn on top of it,
+ * hiding everything below its header strip; it looks expanded when the next
+ * card is still far below, leaving its excerpt uncovered. So the entire
+ * reveal is a stack of `translateY`s: no layout, no repaint of card content,
+ * just the compositor moving opaque layers over one another.
+ *
+ * `openness` is therefore cosmetic here — it drives the ↗ button and how deep
+ * the shadow sits, not the geometry.
  */
 function ScrollDrivenCard({ work, index, total, progress, metrics }) {
-  const { rowH, units, yWait, yDock, activeH } = metrics
+  const { headerH, units, yWait, yDock, cardH } = metrics
 
   const y = useTransform(progress, (p) =>
     lerp(yWait[index], yDock[index], riseAt(p * units, index, TUNING)),
@@ -137,11 +154,19 @@ function ScrollDrivenCard({ work, index, total, progress, metrics }) {
     <WorkCard
       work={work}
       openness={openness}
-      collapsedH={rowH}
-      expandedH={activeH[index]}
-      // Earlier cards sit on top, so a rising card can never cover a row that
-      // has already docked above it.
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, y, zIndex: total - index }}
+      height={cardH[index]}
+      headerH={headerH}
+      fadeContent={false}
+      // LATER cards sit on top: card k+1 covers card k, which is the whole
+      // mechanism. Reverse this and the deck inverts into a plain list.
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        y,
+        zIndex: index + 1,
+      }}
     />
   )
 }
@@ -212,7 +237,11 @@ function PinnedStack({ metrics }) {
 /* Mobile / reduced motion: plain vertical accordion, no pinning             */
 /* ------------------------------------------------------------------------ */
 
-/** Card whose openness springs to a boolean target instead of tracking scroll. */
+/**
+ * Card whose openness springs to a boolean target instead of tracking scroll.
+ * Here the card really does resize: the accordion is in normal flow, so there
+ * is no card on top to reveal it by moving away.
+ */
 function AnimatedCard({ work, isOpen, metrics, cardRef }) {
   const openness = useMotionValue(isOpen ? 1 : 0)
 
@@ -226,13 +255,19 @@ function AnimatedCard({ work, isOpen, metrics, cardRef }) {
     return () => controls.stop()
   }, [isOpen, openness])
 
+  const height = useTransform(
+    openness,
+    [0, 1],
+    [metrics.headerH, metrics.accordionExpandedH],
+  )
+
   return (
     <div ref={cardRef}>
       <WorkCard
         work={work}
         openness={openness}
-        collapsedH={metrics.rowH}
-        expandedH={metrics.accordionExpandedH}
+        height={height}
+        headerH={metrics.headerH}
       />
     </div>
   )
@@ -321,44 +356,50 @@ export default function StackedWorks() {
 
   const metrics = useMemo(() => {
     const n = works.length
-    const rowH = Math.round(
-      clamp(TUNING.ROW_MIN, viewportH * TUNING.ROW_RATIO, TUNING.ROW_MAX),
+
+    // The header strip: the sliver of each card left visible once the next one
+    // is drawn over it. It is also the offset between cards in both stacks.
+    const headerH = Math.round(
+      clamp(TUNING.HEADER_MIN, viewportH * TUNING.HEADER_RATIO, TUNING.HEADER_MAX),
     )
 
-    // Where the waiting stack begins. Sized so the LAST row still peeks above
+    // Where the waiting deck begins. Sized so the LAST card still peeks above
     // the fold, then floored so the intro always keeps usable space.
     const waitTop = Math.round(
       Math.max(
         viewportH * TUNING.WAIT_TOP_MIN_RATIO,
-        viewportH - TUNING.PEEK - (n - 1) * rowH,
+        viewportH - TUNING.PEEK - (n - 1) * headerH,
       ),
     )
 
-    // Each card's two resting positions.
-    const yWait = Array.from({ length: n }, (_, k) => waitTop + k * rowH)
-    const yDock = Array.from({ length: n }, (_, k) => TUNING.TOP_PAD + k * rowH)
+    // Each card's two resting positions. Both stacks use headerH as the pitch,
+    // so consecutive cards overlap by (cardH - headerH) — they are a deck, not
+    // a list, and no gap ever opens between them.
+    const yWait = Array.from({ length: n }, (_, k) => waitTop + k * headerH)
+    const yDock = Array.from(
+      { length: n },
+      (_, k) => TUNING.TOP_PAD + k * headerH,
+    )
 
-    // The active card fills from its docked slot down to just above whatever
-    // is still waiting — clamped so the last card can't run off the bottom.
-    const activeH = Array.from({ length: n }, (_, k) => {
-      const bottom = Math.min(
-        waitTop + (k + 1) * rowH - TUNING.ACTIVE_GAP,
-        viewportH - TUNING.BOTTOM_PAD,
-      )
-      return Math.max(TUNING.ACTIVE_MIN_H, Math.round(bottom - yDock[k]))
+    // Card heights are FIXED. A card is sized to fill from its docked slot
+    // down to where the next card waits, which is exactly the space left
+    // uncovered when it is the active one. The last card has nothing waiting
+    // below it, so it runs to the bottom of the viewport instead.
+    const cardH = Array.from({ length: n }, (_, k) => {
+      const bottom =
+        k === n - 1 ? viewportH - TUNING.BOTTOM_PAD : yWait[k + 1]
+      return Math.max(TUNING.CARD_MIN_H, Math.round(bottom - yDock[k]))
     })
 
     return {
-      rowH,
+      headerH,
       waitTop,
       yWait,
       yDock,
-      activeH,
-      // The accordion isn't pinned, so its expanded card doesn't have to share
-      // the viewport with the rest of the list — it can breathe more.
-      accordionExpandedH: Math.round(
-        clamp(260, viewportH * 0.56, 520),
-      ),
+      cardH,
+      // The accordion isn't a deck — cards sit in normal flow and genuinely
+      // resize, so it needs its own expanded height.
+      accordionExpandedH: Math.round(clamp(260, viewportH * 0.56, 520)),
       units: timelineUnits(n, TUNING),
     }
   }, [viewportH])

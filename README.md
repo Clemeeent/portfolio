@@ -59,24 +59,38 @@ and set the path:
 ## Tuning the scroll reveal
 
 The homepage is a single pinned viewport, from scroll 0. Nothing in it scrolls —
-the cards move within it. Every card has exactly two resting places:
+the cards move within it.
+
+**It's a deck, not a list.** Every card is full size at all times and never
+resizes. Card `k+1` is drawn on top of card `k`, offset down by exactly
+`headerH`, so all you see of a covered card is its header strip. A card looks
+"expanded" only because the next card is still far below it, leaving its excerpt
+uncovered:
 
 ```
 ┌──────────────────────────────┐  ← TOP_PAD
-│ 2026  docked row             │    yDock(k) — cards that had their turn
-│ 2025  docked row             │
+│ 2026  header strip           │  ▄ docked, covered by 2025
+│ 2025  header strip           │  ▄ docked, covered by 2024
+│ 2024  header strip           │  ← ACTIVE: nothing covers it, so its
+│       excerpt  ▪ preview     │    excerpt shows all the way down to
+│       tags                   │    where 2020 waits
 ├──────────────────────────────┤
-│ 2024  ACTIVE                 │    fills the gap between the two stacks
-│       expanded excerpt       │
-├──────────────────────────────┤
-│ 2020  waiting row            │    yWait(k) — never moves until its turn
-│ 2019  waiting row (peeks)    │
+│ 2020  header strip           │  ▄ waiting, covered by 2019
+│ 2019  header strip (peeks)   │  ▄ waiting
 └──────────────────────────────┘  ← viewport bottom
+
+yDock(k) = TOP_PAD + k * headerH      yWait(k) = waitTop + k * headerH
 ```
 
-A card travels from `yWait(k)` to `yDock(k)` exactly once, growing upward from a
-near-fixed bottom edge as it goes. **The rows below it do not move** — that is
-the defining property of the interaction.
+A card travels from `yWait(k)` to `yDock(k)` exactly once. Two consequences
+worth knowing before you touch it:
+
+- **A card "collapses" for free.** It doesn't shrink — card `k+1` rises over it
+  until only its header shows.
+- **The whole reveal is `translateY` on opaque layers.** No height animation, no
+  layout, no content repaint. That's why it stays smooth.
+
+The cards still waiting below never move until their turn.
 
 Every number lives in the `TUNING` object at the top of
 `src/components/StackedWorks.jsx`:
@@ -87,31 +101,27 @@ Every number lives in the `TUNING` object at the top of
 | `LEAD`             | Scroll on the intro alone before card 0 moves.                      |
 | `RAMP`             | Portion of a card's turn spent rising/collapsing. Higher = softer.  |
 | `TAIL`             | How long the last card is held before the page ends.                |
-| `PEEK`             | Px of the **last** waiting row left visible on first paint. Raise to show more of it, lower to give the intro more room, set to `rowH` to fit every row fully. |
-| `TOP_PAD`          | Px above the first docked row.                                      |
-| `ACTIVE_GAP`       | Px between the active card's bottom and the waiting stack.          |
-| `ROW_RATIO/MIN/MAX`| Collapsed row height, as a share of viewport height plus clamps.    |
+| `PEEK`             | Px of the **last** waiting card left visible on first paint. Raise to show more of it, lower to give the intro more room, set to `headerH` to show every header fully. |
+| `TOP_PAD`          | Px above the first docked card.                                     |
+| `HEADER_RATIO/MIN/MAX` | Header strip height — both the visible sliver of a covered card and the offset between cards in the deck. |
 | `INTRO_FADE_*`     | When the intro fades and blurs out behind the first card.           |
 
-Two things worth knowing before changing the timing:
-
-- Each hand-off is a mirror — card `k`'s collapse shares exactly the window of
-  card `k+1`'s rise, so the shrinking card's bottom edge and the rising card's
-  top edge meet precisely. The stack never gaps or overlaps mid-motion.
-- Positions are derived from the viewport, not hard-coded, so the whole list
-  fits on any window size.
+Card heights are derived, not configured: a card is sized to fill from its
+docked slot down to where the next card waits, which is exactly the space left
+uncovered when it's the active one. Everything is computed from the viewport, so
+the deck fits any window size.
 
 ### Three modes
 
 `StackedWorks` picks one at runtime:
 
-1. **Desktop** — the pinned rise-and-dock stack described above. Cards are
-   absolutely positioned and travel with `translateY` (a compositor transform);
-   only their own height triggers layout, and because they're out of flow, one
-   card resizing never reflows the others.
-2. **Under 768px** — no pin. The choreography needs vertical room a phone
-   doesn't have, and pinning fights mobile URL-bar resizing, so the list flows
-   normally and whichever card is nearest the middle of the viewport opens.
+1. **Desktop** — the pinned deck described above. Cards are absolutely
+   positioned and travel with `translateY`; nothing resizes.
+2. **Under 768px** — no pin, and no deck. The overlap needs vertical room a
+   phone doesn't have, and pinning fights mobile URL-bar resizing, so the cards
+   sit in normal flow and genuinely resize: whichever one is nearest the middle
+   of the viewport expands. This is the one place `WorkCard` animates its
+   height, via the `fadeContent` prop.
 3. **`prefers-reduced-motion`** — every card renders open, nothing moves.
 
 `StackedWorks` owns the whole homepage, `<Intro />` included, because the intro

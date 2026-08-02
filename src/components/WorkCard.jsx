@@ -9,30 +9,36 @@ import {
 import PreviewSurface from './PreviewSurface'
 
 /**
- * <WorkCard /> — one project, in three visual states driven by a single
- * `openness` motion value (0 = collapsed row, 1 = expanded excerpt).
+ * <WorkCard /> — one project: a header strip (year · title · client) above an
+ * excerpt (intro text, tags, preview image) with a ↗ button.
  *
- *   openness 0      collapsed strip:  year · title · client
- *   openness 0→1    morphing:         grows in height, pushes to full width
- *   openness 1      excerpt:          intro text + preview image + ↗ button
+ * The card is always laid out at full size. On desktop it is NEVER resized —
+ * it looks collapsed only because the next card in the deck is drawn on top of
+ * it, hiding everything below the header strip. That is what makes the stack
+ * read as overlapping cards rather than a list of rows, and it means the whole
+ * reveal runs on `transform` alone with no layout work per frame.
  *
- * This component owns NO scroll logic — it just renders whatever `openness` it
- * is handed. The parent (<StackedWorks />) decides where that value comes from
- * (scroll position on desktop, active index on mobile). That split is what
- * keeps the scroll maths in one tunable place.
+ * This component owns no scroll logic. The parent (<StackedWorks />) decides
+ * where the card sits and how tall it is.
  *
  * Props
- *   work        item from src/data/works.js
- *   openness    MotionValue<number> 0..1
- *   collapsedH  px height of the compact row
- *   expandedH   px height of the excerpt state
- *   style       extra motion styles from the parent (position / y offset)
+ *   work         item from src/data/works.js
+ *   height       px — a number (desktop, fixed) or a MotionValue (mobile, animated)
+ *   headerH      px height of the header strip: the sliver left visible when
+ *                the next card covers this one
+ *   openness     MotionValue<number> 0..1 — cosmetic only (↗ button, shadow
+ *                depth). On desktop the actual reveal is geometric.
+ *   fadeContent  fade the excerpt in with `openness`. Desktop passes false:
+ *                there the excerpt is revealed by uncovering, and fading it
+ *                while it slides would fight that.
+ *   style        extra motion styles from the parent (position / y offset)
  */
 export default function WorkCard({
   work,
+  height,
+  headerH,
   openness,
-  collapsedH,
-  expandedH,
+  fadeContent = true,
   style,
   className = '',
 }) {
@@ -45,33 +51,28 @@ export default function WorkCard({
     setIsOpen((prev) => (prev === next ? prev : next))
   })
 
-  const height = useTransform(
-    openness,
-    [0, 1],
-    [collapsedH, Math.max(expandedH, collapsedH)],
-  )
+  // The shadow points UPWARD (negative y). Each card sits on top of the one
+  // behind it and is offset downward, so the edge that needs to read as lifted
+  // is the top one. This is what sells the deck.
+  const shadowBlur = useTransform(openness, [0, 1], [18, 44])
+  const shadowSpread = useTransform(openness, [0, 1], [-6, -10])
+  const shadowAlpha = useTransform(openness, [0, 1], [0.07, 0.1])
+  const boxShadow = useMotionTemplate`0px ${shadowSpread}px ${shadowBlur}px rgba(22, 22, 26, ${shadowAlpha})`
 
-  // Rows and the expanded card share one width — the card grows vertically
-  // only, so the stack reads as a single column at every moment.
+  // Only used when `fadeContent` is on (mobile), where the card really does
+  // resize and text would otherwise appear mid-morph.
+  const fadedOpacity = useTransform(openness, [0.4, 0.9], [0, 1])
+  const fadedY = useTransform(openness, [0.4, 1], [12, 0])
+  const contentOpacity = fadeContent ? fadedOpacity : 1
+  const contentY = fadeContent ? fadedY : 0
 
-  // Shadow deepens as the card lifts off the stack. Even collapsed rows carry
-  // a little, so the waiting stack reads as stacked paper rather than a list.
-  const shadowBlur = useTransform(openness, [0, 1], [16, 48])
-  const shadowY = useTransform(openness, [0, 1], [-2, 18])
-  const shadowAlpha = useTransform(openness, [0, 1], [0.05, 0.11])
-  const boxShadow = useMotionTemplate`0px ${shadowY}px ${shadowBlur}px rgba(22, 22, 26, ${shadowAlpha})`
-
-  // Excerpt content fades in over the back half of the morph, so text never
-  // appears while the card is still visibly resizing.
-  const contentOpacity = useTransform(openness, [0.4, 0.9], [0, 1])
-  const contentY = useTransform(openness, [0.4, 1], [12, 0])
   const arrowScale = useTransform(openness, [0.5, 1], [0.6, 1])
   const arrowOpacity = useTransform(openness, [0.5, 0.95], [0, 1])
 
   return (
     <motion.article
       style={{ height, boxShadow, ...style }}
-      className={`relative overflow-hidden rounded-card border border-hairline bg-card will-change-[height,transform] ${className}`}
+      className={`relative overflow-hidden rounded-card border border-hairline bg-card will-change-transform ${className}`}
     >
       {/* Stretched link: the whole tile is the click target. It stays in the
           document at all times so keyboard users can reach every project, but
@@ -83,10 +84,11 @@ export default function WorkCard({
       />
 
       <div className="relative flex h-full flex-col">
-        {/* ---- Compact row — visible in every state, never moves ---- */}
+        {/* ---- Header strip — the sliver left visible when this card is
+                covered by the next one in the deck ---- */}
         <div
           className="relative flex shrink-0 items-center gap-3 pr-16 pl-5 sm:gap-5 sm:pr-20 sm:pl-7"
-          style={{ height: collapsedH }}
+          style={{ height: headerH }}
         >
           <span className="w-10 shrink-0 text-xs tabular-nums text-muted sm:w-12 sm:text-sm">
             {work.year}
@@ -122,7 +124,7 @@ export default function WorkCard({
           </div>
         </div>
 
-        {/* ---- Excerpt — only readable once the card is (nearly) open ---- */}
+        {/* ---- Excerpt — uncovered as the card above it moves away ---- */}
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}
           aria-hidden={!isOpen}
