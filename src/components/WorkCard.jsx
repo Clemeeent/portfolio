@@ -51,15 +51,14 @@ export default function WorkCard({
     [collapsedH, Math.max(expandedH, collapsedH)],
   )
 
-  // Collapsed rows sit slightly inset; expanding pushes the card to full width.
-  const inset = useTransform(openness, [0, 1], [14, 0])
-  const marginLeft = useMotionTemplate`${inset}px`
-  const marginRight = useMotionTemplate`${inset}px`
+  // Rows and the expanded card share one width — the card grows vertically
+  // only, so the stack reads as a single column at every moment.
 
-  // Shadow deepens as the card lifts off the stack.
-  const shadowBlur = useTransform(openness, [0, 1], [10, 44])
-  const shadowY = useTransform(openness, [0, 1], [2, 20])
-  const shadowAlpha = useTransform(openness, [0, 1], [0.03, 0.1])
+  // Shadow deepens as the card lifts off the stack. Even collapsed rows carry
+  // a little, so the waiting stack reads as stacked paper rather than a list.
+  const shadowBlur = useTransform(openness, [0, 1], [16, 48])
+  const shadowY = useTransform(openness, [0, 1], [-2, 18])
+  const shadowAlpha = useTransform(openness, [0, 1], [0.05, 0.11])
   const boxShadow = useMotionTemplate`0px ${shadowY}px ${shadowBlur}px rgba(22, 22, 26, ${shadowAlpha})`
 
   // Excerpt content fades in over the back half of the morph, so text never
@@ -71,7 +70,7 @@ export default function WorkCard({
 
   return (
     <motion.article
-      style={{ height, marginLeft, marginRight, boxShadow, ...style }}
+      style={{ height, boxShadow, ...style }}
       className={`relative overflow-hidden rounded-card border border-hairline bg-card will-change-[height,transform] ${className}`}
     >
       {/* Stretched link: the whole tile is the click target. It stays in the

@@ -1,18 +1,16 @@
-import Intro from '../components/Intro'
 import StackedWorks from '../components/StackedWorks'
 
 /**
- * Homepage composition, top to bottom:
- *   1. <Intro />        background layer — heading, bio (scrolls away)
- *   2. <StackedWorks /> pinned, scroll-driven stack of project cards
+ * The homepage is a single pinned viewport: the intro and the works stack
+ * share one screen, and scrolling drives the cards through it.
  *
- * The page ends with the works list. <FeatureBlocks /> and <SiteFooter /> still
- * exist in the repo — re-import either one here to bring it back.
+ * <StackedWorks /> owns that whole composition — including <Intro />, because
+ * the intro animates completely differently in the pinned and mobile layouts,
+ * so the component that picks the layout has to be the one that places it.
  */
 export default function Home() {
   return (
     <main>
-      <Intro />
       <StackedWorks />
     </main>
   )

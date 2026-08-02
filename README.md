@@ -58,37 +58,65 @@ and set the path:
 
 ## Tuning the scroll reveal
 
-All of it lives in the `TUNING` object at the top of
+The homepage is a single pinned viewport, from scroll 0. Nothing in it scrolls —
+the cards move within it. Every card has exactly two resting places:
+
+```
+┌──────────────────────────────┐  ← TOP_PAD
+│ 2026  docked row             │    yDock(k) — cards that had their turn
+│ 2025  docked row             │
+├──────────────────────────────┤
+│ 2024  ACTIVE                 │    fills the gap between the two stacks
+│       expanded excerpt       │
+├──────────────────────────────┤
+│ 2020  waiting row            │    yWait(k) — never moves until its turn
+│ 2019  waiting row (peeks)    │
+└──────────────────────────────┘  ← viewport bottom
+```
+
+A card travels from `yWait(k)` to `yDock(k)` exactly once, growing upward from a
+near-fixed bottom edge as it goes. **The rows below it do not move** — that is
+the defining property of the interaction.
+
+Every number lives in the `TUNING` object at the top of
 `src/components/StackedWorks.jsx`:
 
-| Key                | What it does                                                        |
-| ------------------ | ------------------------------------------------------------------- |
-| `UNIT_VH`          | Scroll distance per card. Raise it to slow the whole thing down.     |
-| `LEAD`             | Scroll before the first card opens.                                  |
-| `RAMP`             | How much of a card's turn is spent morphing (0–1). Higher = softer.  |
-| `TAIL`             | How long the last card stays open before the section releases.       |
-| `ROW_H*`           | Collapsed strip height, per breakpoint.                              |
-| `EXPANDED_MIN/MAX` | Clamps on the expanded card height.                                  |
+| Key                | What it does                                                       |
+| ------------------ | ------------------------------------------------------------------ |
+| `UNIT_VH`          | Scroll distance per card. Raise it to slow the whole thing down.    |
+| `LEAD`             | Scroll on the intro alone before card 0 moves.                      |
+| `RAMP`             | Portion of a card's turn spent rising/collapsing. Higher = softer.  |
+| `TAIL`             | How long the last card is held before the page ends.                |
+| `PEEK`             | Px of the **last** waiting row left visible on first paint. Raise to show more of it, lower to give the intro more room, set to `rowH` to fit every row fully. |
+| `TOP_PAD`          | Px above the first docked row.                                      |
+| `ACTIVE_GAP`       | Px between the active card's bottom and the waiting stack.          |
+| `ROW_RATIO/MIN/MAX`| Collapsed row height, as a share of viewport height plus clamps.    |
+| `INTRO_FADE_*`     | When the intro fades and blurs out behind the first card.           |
 
-The choreography is documented with an ASCII timeline in the same file. Two
-things worth knowing before changing it:
+Two things worth knowing before changing the timing:
 
-- Each hand-off is a mirror — the outgoing card's collapse and the incoming
-  card's expansion use the same eased curve, so their combined height is
-  constant and nothing below the pair ever jitters.
-- The expanded height is computed from the viewport, not hard-coded, so the
-  whole list always fits on screen while pinned.
+- Each hand-off is a mirror — card `k`'s collapse shares exactly the window of
+  card `k+1`'s rise, so the shrinking card's bottom edge and the rising card's
+  top edge meet precisely. The stack never gaps or overlaps mid-motion.
+- Positions are derived from the viewport, not hard-coded, so the whole list
+  fits on any window size.
 
 ### Three modes
 
 `StackedWorks` picks one at runtime:
 
-1. **Desktop** — the section is pinned with `position: sticky` and cards are
-   absolutely positioned, moved with `translateY`. Only the active card's height
-   changes, so a resizing card never reflows its siblings.
-2. **Under 768px** — no pin (it fights mobile URL-bar resizing). The list flows
+1. **Desktop** — the pinned rise-and-dock stack described above. Cards are
+   absolutely positioned and travel with `translateY` (a compositor transform);
+   only their own height triggers layout, and because they're out of flow, one
+   card resizing never reflows the others.
+2. **Under 768px** — no pin. The choreography needs vertical room a phone
+   doesn't have, and pinning fights mobile URL-bar resizing, so the list flows
    normally and whichever card is nearest the middle of the viewport opens.
 3. **`prefers-reduced-motion`** — every card renders open, nothing moves.
+
+`StackedWorks` owns the whole homepage, `<Intro />` included, because the intro
+animates completely differently in the pinned and mobile layouts — so the
+component that picks the layout has to be the one that places it.
 
 ## Deploying
 
