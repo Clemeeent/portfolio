@@ -15,26 +15,31 @@ npm run preview  # serve the production build
 src/
   data/
     works.js          ← selected works: rows, excerpts, full case studies
-    features.js       ← the full-bleed blocks below the works list
+    features.js       ← full-bleed blocks (not currently on the page)
   components/
     Intro.jsx         heading + bio, scrolls away behind the works
     StackedWorks.jsx  all the scroll maths + the three reveal strategies
     WorkCard.jsx      one card: collapsed row ⇄ expanded excerpt
-    FeatureBlocks.jsx full-width sections with bottom caption strips
+    FeatureBlocks.jsx full-width sections — unused, kept for re-use
     PreviewSurface.jsx image slot, falls back to an accent gradient
     SiteFooter.jsx
   pages/
-    Home.jsx          Intro → StackedWorks → FeatureBlocks → Footer
+    Home.jsx          Intro → StackedWorks (the page ends with the works)
     CaseStudy.jsx     /work/:slug — the full write-up
     NotFound.jsx
 ```
 
 ## Editing content
 
-Everything on the site comes from `src/data/works.js` and `src/data/features.js`.
-Both files document every field at the top. To add a project, append an object to
-the `works` array — the homepage row, the excerpt card, the `/work/<slug>` route
-and the "next project" link all follow automatically.
+Everything on the site comes from `src/data/works.js`, which documents every
+field at the top. To add a project, append an object to the `works` array — the
+homepage row, the excerpt card, the `/work/<slug>` route and the "next project"
+link all follow automatically.
+
+The homepage ends with the works list. `FeatureBlocks.jsx` (full-bleed sections,
+driven by `src/data/features.js`) and `SiteFooter.jsx` are still in the repo but
+no longer rendered there — re-import either one in `Home.jsx` to bring it back.
+The footer is still used by the case-study pages.
 
 Case-study bodies are an array of typed blocks (`lead`, `heading`, `text`,
 `list`, `quote`, `figure`, `stats`), rendered by `Block` in `CaseStudy.jsx`. They
