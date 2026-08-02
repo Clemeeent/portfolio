@@ -45,7 +45,10 @@ export default function WorkCard({
   // `isOpen` mirrors `openness` into React state, but only at the halfway mark,
   // so we can flip non-animatable things (cursor, aria, tab order) once per
   // card instead of on every frame.
-  const [isOpen, setIsOpen] = useState(false)
+  // Seeded from the current value, not `false`: in the static list `openness`
+  // is a constant 1 and never fires a change event, so a hardcoded `false`
+  // would leave the excerpt permanently aria-hidden.
+  const [isOpen, setIsOpen] = useState(() => openness.get() > 0.5)
   useMotionValueEvent(openness, 'change', (v) => {
     const next = v > 0.5
     setIsOpen((prev) => (prev === next ? prev : next))

@@ -117,12 +117,32 @@ the deck fits any window size.
 
 1. **Desktop** — the pinned deck described above. Cards are absolutely
    positioned and travel with `translateY`; nothing resizes.
-2. **Under 768px** — no pin, and no deck. The overlap needs vertical room a
-   phone doesn't have, and pinning fights mobile URL-bar resizing, so the cards
-   sit in normal flow and genuinely resize: whichever one is nearest the middle
-   of the viewport expands. This is the one place `WorkCard` animates its
-   height, via the `fadeContent` prop.
-3. **`prefers-reduced-motion`** — every card renders open, nothing moves.
+2. **Under 768px, and `prefers-reduced-motion`** — a static list: every card
+   open, in normal flow, nothing animating. The overlap needs vertical room a
+   phone doesn't have, and pinning fights mobile URL-bar resizing.
+
+## No scroll jacking
+
+The page scrolls natively at 1:1 and the deck is locked to it. Specifically:
+
+- **Nothing intercepts scroll.** No wheel or touch handlers, no `scroll-snap`,
+  no `scroll-behavior: smooth`, no programmatic scrolling (the one
+  `window.scrollTo` is a scroll reset on route change). The pin is CSS
+  `position: sticky`, so real scroll distance is consumed and the scrollbar
+  behaves normally.
+- **The mapping is linear.** `riseAt()` has no easing curve — one pixel of
+  scroll always moves a card the same distance. Measured over card 0's travel:
+  exactly −55px of card movement per equal scroll step, start to finish. An
+  ease would make cards accelerate while you scroll at a constant rate.
+- **Nothing keeps moving after you stop.** Every position is a pure function of
+  `scrollY` — no springs, no inertia, no lerp-toward-target. Stop scrolling and
+  the frame is final.
+- **Browser scroll restoration is left alone**, for the same reason: landing
+  mid-pin on reload renders correctly with no catch-up.
+
+The one time-based animation left in the project is the case-study page's fade
+on mount (`CaseStudy.jsx`), which is a route transition and has nothing to do
+with scroll.
 
 `StackedWorks` owns the whole homepage, `<Intro />` included, because the intro
 animates completely differently in the pinned and mobile layouts — so the

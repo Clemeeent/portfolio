@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import {
-  animate,
   motion,
   useMotionTemplate,
   useMotionValue,
@@ -93,17 +92,21 @@ const TUNING = {
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 const clamp = (min, v, max) => Math.min(max, Math.max(min, v))
-/** Ease in/out so cards don't start and stop abruptly at the ramp edges. */
-const smoothstep = (t) => t * t * (3 - 2 * t)
 const lerp = (a, b, t) => a + (b - a) * t
 
 /**
  * How far card `k` has travelled from its waiting slot to its docked slot at
  * timeline position `u`. 0 = still waiting, 1 = docked. Never goes back down —
  * once a card has risen it stays at the top.
+ *
+ * DELIBERATELY LINEAR. There is no easing curve here: one pixel of scroll must
+ * always move a card the same distance, so the motion is locked to the wheel /
+ * trackpad rather than running to its own timing. An ease would make the card
+ * accelerate and decelerate while you scroll at a constant rate — which is
+ * exactly the "animation with a mind of its own" feel we do not want.
  */
 function riseAt(u, k, { LEAD, SLOT, RAMP }) {
-  return smoothstep(clamp01((u - (LEAD + k * SLOT)) / (SLOT * RAMP)))
+  return clamp01((u - (LEAD + k * SLOT)) / (SLOT * RAMP))
 }
 
 /**
@@ -194,7 +197,8 @@ function PinnedStack({ metrics }) {
   const introFade = useTransform(scrollYProgress, (p) => {
     const from = TUNING.INTRO_FADE_FROM
     const to = TUNING.INTRO_FADE_TO
-    return smoothstep(clamp01((p * units - from) / (to - from)))
+    // Linear, like the card travel — the fade tracks scroll 1:1.
+    return clamp01((p * units - from) / (to - from))
   })
   const introOpacity = useTransform(introFade, (t) => 1 - t)
   const introBlurPx = useTransform(introFade, (t) => t * TUNING.INTRO_BLUR)
@@ -234,83 +238,26 @@ function PinnedStack({ metrics }) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Mobile / reduced motion: plain vertical accordion, no pinning             */
+/* Mobile / reduced motion: a plain list. No pin, no animation at all.        */
 /* ------------------------------------------------------------------------ */
 
 /**
- * Card whose openness springs to a boolean target instead of tracking scroll.
- * Here the card really does resize: the accordion is in normal flow, so there
- * is no card on top to reveal it by moving away.
+ * Small screens and `prefers-reduced-motion` get every card open, in normal
+ * document flow, with nothing animating.
+ *
+ * This used to be a spring-driven accordion that opened whichever card was
+ * nearest the middle of the viewport. That failed the "follows your scroll"
+ * test in the most basic way: the spring kept running after you stopped
+ * scrolling, so the page moved on its own. A scroll-linked version would have
+ * been worse — with cards in normal flow, resizing one shifts everything below
+ * it, which shifts what counts as "nearest the middle", which resizes cards…
+ * a feedback loop that fights the user's scroll.
+ *
+ * A static list has neither problem, and reads perfectly well on a phone.
  */
-function AnimatedCard({ work, isOpen, metrics, cardRef }) {
-  const openness = useMotionValue(isOpen ? 1 : 0)
-
-  useEffect(() => {
-    const controls = animate(openness, isOpen ? 1 : 0, {
-      type: 'spring',
-      stiffness: 260,
-      damping: 34,
-      restDelta: 0.001,
-    })
-    return () => controls.stop()
-  }, [isOpen, openness])
-
-  const height = useTransform(
-    openness,
-    [0, 1],
-    [metrics.headerH, metrics.accordionExpandedH],
-  )
-
-  return (
-    <div ref={cardRef}>
-      <WorkCard
-        work={work}
-        openness={openness}
-        height={height}
-        headerH={metrics.headerH}
-      />
-    </div>
-  )
-}
-
-/**
- * Mobile fallback. The pinned rise-and-dock choreography needs vertical room
- * the phone viewport doesn't have, and pinning fights mobile URL-bar resizing,
- * so the list flows normally and whichever card is nearest the middle of the
- * viewport opens. Still scroll-driven, still one at a time — just no pin.
- */
-function AccordionWorks({ metrics, forceAllOpen }) {
-  const [active, setActive] = useState(0)
-  const refs = useRef([])
-
-  useEffect(() => {
-    if (forceAllOpen) return
-    const els = refs.current.filter(Boolean)
-    if (!els.length) return
-
-    // Watch a thin band across the middle of the viewport; the card whose
-    // centre is closest to it wins. Widen the band by shrinking the 42% inset.
-    const io = new IntersectionObserver(
-      () => {
-        const mid = window.innerHeight / 2
-        let best = 0
-        let bestDist = Infinity
-        els.forEach((el, i) => {
-          const rect = el.getBoundingClientRect()
-          const dist = Math.abs(rect.top + rect.height / 2 - mid)
-          if (dist < bestDist) {
-            bestDist = dist
-            best = i
-          }
-        })
-        setActive(best)
-      },
-      { rootMargin: '-42% 0px -42% 0px', threshold: [0, 0.5, 1] },
-    )
-
-    els.forEach((el) => io.observe(el))
-    return () => io.disconnect()
-  }, [forceAllOpen])
+function StaticWorks({ metrics }) {
+  // WorkCard wants a MotionValue; this one is a constant and never changes.
+  const alwaysOpen = useMotionValue(1)
 
   return (
     <>
@@ -319,20 +266,17 @@ function AccordionWorks({ metrics, forceAllOpen }) {
       </section>
 
       <section className="px-5 pb-16 sm:px-8">
-        <div className="mx-auto w-full max-w-[1400px]">
-          <div className="flex flex-col gap-2.5">
-            {works.map((work, i) => (
-              <AnimatedCard
-                key={work.slug}
-                work={work}
-                isOpen={forceAllOpen || i === active}
-                metrics={metrics}
-                cardRef={(el) => {
-                  refs.current[i] = el
-                }}
-              />
-            ))}
-          </div>
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2.5">
+          {works.map((work) => (
+            <WorkCard
+              key={work.slug}
+              work={work}
+              openness={alwaysOpen}
+              height={metrics.staticCardH}
+              headerH={metrics.headerH}
+              fadeContent={false}
+            />
+          ))}
         </div>
       </section>
     </>
@@ -342,12 +286,17 @@ function AccordionWorks({ metrics, forceAllOpen }) {
 /* ------------------------------------------------------------------------ */
 
 /**
- * <StackedWorks /> — owns the whole homepage: it picks a strategy and computes
- * the geometry both of them share.
+ * <StackedWorks /> — owns the whole homepage: it picks a layout and computes
+ * the geometry they share.
  *
- *   desktop + motion OK    → pinned rise-and-dock stack
- *   small screen           → vertical accordion (scroll-linked, unpinned)
- *   prefers-reduced-motion → every card open, no movement at all
+ *   desktop + motion OK    → pinned deck, every position a pure function of
+ *                            scrollY, mapped linearly
+ *   small screen           → static list, nothing animates
+ *   prefers-reduced-motion → same static list
+ *
+ * Nothing here intercepts scroll: no wheel or touch handlers, no scroll-snap,
+ * no smooth-scroll, no programmatic scrolling. The pin is CSS `position:
+ * sticky`, so the page scrolls natively at 1:1 the whole way down.
  */
 export default function StackedWorks() {
   const viewportH = useViewportHeight()
@@ -397,14 +346,13 @@ export default function StackedWorks() {
       yWait,
       yDock,
       cardH,
-      // The accordion isn't a deck — cards sit in normal flow and genuinely
-      // resize, so it needs its own expanded height.
-      accordionExpandedH: Math.round(clamp(260, viewportH * 0.56, 520)),
+      // The static list isn't a deck — cards sit in normal flow, fully open,
+      // so they get their own height.
+      staticCardH: Math.round(clamp(320, viewportH * 0.62, 560)),
       units: timelineUnits(n, TUNING),
     }
   }, [viewportH])
 
-  if (reduceMotion) return <AccordionWorks metrics={metrics} forceAllOpen />
-  if (isSmall) return <AccordionWorks metrics={metrics} />
+  if (reduceMotion || isSmall) return <StaticWorks metrics={metrics} />
   return <PinnedStack metrics={metrics} />
 }

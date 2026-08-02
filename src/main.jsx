@@ -4,11 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
-// Browsers restore scroll position on reload, which lands you mid-pin with the
-// scroll-linked animation out of sync. Owning it manually avoids that.
-if ('scrollRestoration' in window.history) {
-  window.history.scrollRestoration = 'manual'
-}
+// Note: browser scroll restoration is deliberately left alone. Every position
+// in the works deck is a pure function of scrollY, so landing mid-pin on reload
+// renders correctly with no catch-up — there is nothing to protect against, and
+// overriding it would take away behaviour the browser gives the user for free.
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
