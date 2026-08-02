@@ -1,0 +1,4 @@
+# SPA fallback for Netlify / Cloudflare Pages.
+# Without this, loading /work/<slug> directly returns a 404 because no such
+# file exists on disk — the route only exists in the client-side router.
+/*  /index.html  200

@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Tweak these to re-skin the whole site.
+   Tailwind v4 exposes every @theme key as a utility (e.g. `bg-paper`,
+   `text-ink`, `text-muted`, `rounded-card`).
+--------------------------------------------------------------------------- */
+@theme {
+  --color-paper: #f1f0ee; /* page background — warm light grey */
+  --color-card: #ffffff; /* card surface */
+  --color-ink: #16161a; /* near-black, titles */
+  --color-muted: #8b8b93; /* years, clients, meta */
+  --color-hairline: #e4e3e0; /* dividers + card borders */
+
+  --radius-card: 1.25rem;
+  --radius-block: 1.75rem;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Editorial display type: tight tracking, tight leading. */
+.display {
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+/* Small uppercase pill label. */
+.pill {
+  @apply inline-flex items-center gap-2 rounded-full border border-hairline bg-card/70 px-3.5 py-1.5 text-[11px] font-medium tracking-[0.14em] text-muted uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
