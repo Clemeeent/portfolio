@@ -26,6 +26,9 @@ import PreviewSurface from './PreviewSurface'
  *   fadeContent  fade the excerpt in with `openness`. Desktop passes false:
  *                there the excerpt is revealed by uncovering, and fading it
  *                while it slides would fight that.
+ *   onActivate   called when a card that is NOT in focus is clicked. Given
+ *                this, the tile only navigates once it is in focus. Omit it
+ *                (static list) and the tile always links.
  *   style        extra motion styles from the parent (position / y offset)
  */
 export default function WorkCard({
@@ -34,6 +37,7 @@ export default function WorkCard({
   headerH,
   openness,
   fadeContent = true,
+  onActivate,
   style,
   className = '',
 }) {
@@ -67,14 +71,29 @@ export default function WorkCard({
       style={{ height, ...style }}
       className={`relative overflow-hidden rounded-card border border-hairline bg-card will-change-transform ${className}`}
     >
-      {/* Stretched link: the whole tile is the click target. It stays in the
-          document at all times so keyboard users can reach every project, but
-          the ↗ affordance only shows in the expanded state. */}
-      <Link
-        to={`/work/${work.slug}`}
-        aria-label={`${work.title} — ${work.client}, ${work.year}. Read the case study.`}
-        className="absolute inset-0 z-20 rounded-card focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:outline-none"
-      />
+      {/* The whole tile is the click target, but what it does depends on
+          whether this card is the one in focus:
+
+            in focus  → a link that opens the case study
+            covered   → a button that scrolls this card into focus first
+
+          So a partly hidden card can never navigate you somewhere you can't
+          see. Both are real focusable controls, so every project stays
+          keyboard-reachable either way. */}
+      {isOpen || !onActivate ? (
+        <Link
+          to={`/work/${work.slug}`}
+          aria-label={`${work.title} — ${work.client}, ${work.year}. Read the case study.`}
+          className="absolute inset-0 z-20 rounded-card focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:outline-none"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={onActivate}
+          aria-label={`${work.title} — ${work.client}, ${work.year}. Bring this project into view.`}
+          className="absolute inset-0 z-20 cursor-pointer rounded-card focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:outline-none"
+        />
+      )}
 
       <div className="relative flex h-full flex-col">
         {/* ---- Header strip — the sliver left visible when this card is

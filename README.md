@@ -97,10 +97,8 @@ Every number lives in the `TUNING` object at the top of
 
 | Key                | What it does                                                       |
 | ------------------ | ------------------------------------------------------------------ |
-| `UNIT_VH`          | Scroll distance per card. Raise it to slow the whole thing down.    |
-| `LEAD`             | Scroll on the intro alone before card 0 moves.                      |
-| `RAMP`             | Portion of a card's turn spent rising/collapsing. Higher = softer.  |
-| `TAIL`             | How long the last card is held before the page ends.                |
+| `SCROLL_RATIO`     | Scroll per card, as a multiple of how far the card actually travels. At `1`, one pixel of scroll moves the active card exactly one pixel. Raise it to make cards move slower than the scroll. |
+| `RAMP`             | Must stay equal to `SLOT`. A card's rise fills its whole slot; lowering it reintroduces dead scroll at the end of every card's turn. |
 | `PEEK`             | Px of the **last** waiting card left visible on first paint. Raise to show more of it, lower to give the intro more room, set to `headerH` to show every header fully. |
 | `TOP_PAD`          | Px above the first docked card.                                     |
 | `HEADER_RATIO/MIN/MAX` | Header strip height — both the visible sliver of a covered card and the offset between cards in the deck. |
@@ -110,6 +108,19 @@ Card heights are derived, not configured: a card is sized to fill from its
 docked slot down to where the next card waits, which is exactly the space left
 uncovered when it's the active one. Everything is computed from the viewport, so
 the deck fits any window size.
+
+### Clicking a card
+
+A tile does one of two things depending on whether it's the card in focus:
+
+- **In focus** → it's a link, and opens the case study.
+- **Covered** → it's a button, and scrolls itself into focus first.
+
+So a partly hidden card can never navigate you somewhere you can't see. Only a
+covered card's visible header strip is clickable anyway — the card on top of it
+wins the pointer. Both states are real focusable controls, so every project
+stays keyboard-reachable. In the static list (mobile / reduced motion) every
+card is open, so every tile is a plain link.
 
 ### Three modes
 
@@ -130,10 +141,14 @@ The page scrolls natively at 1:1 and the deck is locked to it. Specifically:
   `window.scrollTo` is a scroll reset on route change). The pin is CSS
   `position: sticky`, so real scroll distance is consumed and the scrollbar
   behaves normally.
-- **The mapping is linear.** `riseAt()` has no easing curve — one pixel of
-  scroll always moves a card the same distance. Measured over card 0's travel:
-  exactly −55px of card movement per equal scroll step, start to finish. An
-  ease would make cards accelerate while you scroll at a constant rate.
+- **The mapping is linear and 1:1.** `riseAt()` has no easing curve, and the
+  pinned range is derived from how far the cards actually travel. Measured
+  across the whole scroll range: exactly 1.00 card-pixels per scroll-pixel,
+  min and max alike.
+- **There are no holds.** Each card's rise fills its entire slot, so at every
+  point in the range exactly one card is moving — zero dead steps measured
+  across the full sweep. A hold is scroll being consumed with nothing moving,
+  which reads as the page lingering on a card and ignoring your input.
 - **Nothing keeps moving after you stop.** Every position is a pure function of
   `scrollY` — no springs, no inertia, no lerp-toward-target. Stop scrolling and
   the frame is final.

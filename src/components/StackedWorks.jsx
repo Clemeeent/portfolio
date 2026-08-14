@@ -51,27 +51,38 @@ import WorkCard from './WorkCard'
 
    The cards still waiting below never move until their turn.
 
-   THE TIMELINE (in "units"; UNIT_VH converts a unit to scroll distance)
+   THE TIMELINE (in "units"; one unit = one card's turn = unitPx of scroll)
 
-     0      LEAD    LEAD+1   LEAD+2   LEAD+3   LEAD+4        +TAIL
-     |───────|════════|════════|════════|════════|═════════════|
-      intro   card 0   card 1   card 2   card 3   card 4 held
-      alone   rises    rises    rises    rises    to the end
+     0        1        2        3        4        5
+     |════════|════════|════════|════════|════════|
+      card 0   card 1   card 2   card 3   card 4
+      rises    rises    rises    rises    rises
 
-   Card k rises over RAMP units starting at LEAD + k. Card k's collapse shares
-   exactly the window of card k+1's rise, so the two are mirrors: the shrinking
-   card's bottom edge and the rising card's top edge meet precisely, and the
-   stack never gaps or overlaps mid-motion.
+   Card k rises over its whole slot, from unit k to unit k+1. There is NO lead
+   before the first card, NO hold once a card lands, and NO tail after the last
+   one — at every point in the pinned range exactly one card is in motion. A
+   hold would mean scroll being consumed with nothing moving, which reads as
+   the page lingering on a card and ignoring your input.
+
+   Card k's collapse shares exactly the window of card k+1's rise, so the two
+   are mirrors: the shrinking card's bottom edge and the rising card's top edge
+   meet precisely, and the stack never gaps or overlaps mid-motion.
 =========================================================================== */
 const TUNING = {
-  UNIT_VH: 80, // scroll distance (in vh) per card — raise it to slow things down
-  LEAD: 0.4, // units of scroll on the intro alone before card 0 moves
-  SLOT: 1, // units per card (leave at 1; pace with UNIT_VH)
-  RAMP: 0.45, // portion of a slot spent rising/collapsing. Higher = softer.
-  TAIL: 0.6, // units the last card is held before the page ends
+  // Scroll distance per card, as a MULTIPLE OF THE DISTANCE THE CARD TRAVELS.
+  // At 1, one pixel of scroll moves the active card exactly one pixel — the
+  // deck tracks the wheel 1:1, the same rate ordinary page content would move.
+  // Raise it to make cards move slower than the scroll. No value produces a
+  // hold; the mapping is continuous by construction.
+  SCROLL_RATIO: 1,
 
-  INTRO_FADE_FROM: 0.2, // unit at which the intro starts fading out
-  INTRO_FADE_TO: 0.74, // unit by which it is fully gone (card 0 covers it)
+  SLOT: 1, // units per card
+  RAMP: 1, // MUST stay equal to SLOT. A card's rise fills its entire slot, so
+  //          there is never a stretch of scroll where nothing moves. Lowering
+  //          this reintroduces dead scroll at the end of every card's turn.
+
+  INTRO_FADE_FROM: 0, // unit at which the intro starts fading out
+  INTRO_FADE_TO: 0.7, // unit by which it is fully gone (card 0 covers it)
   INTRO_BLUR: 10, // px of blur at full fade
 
   TOP_PAD: 24, // px above the first docked card
@@ -105,8 +116,8 @@ const lerp = (a, b, t) => a + (b - a) * t
  * accelerate and decelerate while you scroll at a constant rate — which is
  * exactly the "animation with a mind of its own" feel we do not want.
  */
-function riseAt(u, k, { LEAD, SLOT, RAMP }) {
-  return clamp01((u - (LEAD + k * SLOT)) / (SLOT * RAMP))
+function riseAt(u, k, { SLOT, RAMP }) {
+  return clamp01((u - k * SLOT) / (SLOT * RAMP))
 }
 
 /**
@@ -122,8 +133,13 @@ function opennessAt(u, k, total, timing) {
 }
 
 /** Total length of the timeline in units. */
-function timelineUnits(total, { LEAD, SLOT, RAMP, TAIL }) {
-  return LEAD + (total - 1) * SLOT + SLOT * RAMP + TAIL
+function timelineUnits(total, { SLOT, RAMP }) {
+  return (total - 1) * SLOT + SLOT * RAMP
+}
+
+/** The timeline position at which card `k` is fully open. */
+function fullyOpenAt(k, { SLOT, RAMP }) {
+  return k * SLOT + SLOT * RAMP
 }
 
 /* ------------------------------------------------------------------------ */
@@ -142,7 +158,7 @@ function timelineUnits(total, { LEAD, SLOT, RAMP, TAIL }) {
  * `openness` is therefore cosmetic here — it drives the ↗ button, not the
  * geometry.
  */
-function ScrollDrivenCard({ work, index, total, progress, metrics }) {
+function ScrollDrivenCard({ work, index, total, progress, metrics, onActivate }) {
   const { headerH, units, yWait, yDock, cardH } = metrics
 
   const y = useTransform(progress, (p) =>
@@ -160,6 +176,9 @@ function ScrollDrivenCard({ work, index, total, progress, metrics }) {
       height={cardH[index]}
       headerH={headerH}
       fadeContent={false}
+      // Clicking a covered card scrolls it into focus rather than navigating.
+      // Only the card actually in focus opens its case study.
+      onActivate={() => onActivate(index)}
       // LATER cards sit on top: card k+1 covers card k, which is the whole
       // mechanism. Reverse this and the deck inverts into a plain list.
       style={{
@@ -204,11 +223,30 @@ function PinnedStack({ metrics }) {
   const introBlurPx = useTransform(introFade, (t) => t * TUNING.INTRO_BLUR)
   const introFilter = useMotionTemplate`blur(${introBlurPx}px)`
 
+  /**
+   * Scroll so that card `index` is exactly fully open. Used when a covered
+   * card is clicked: bring it into focus instead of navigating away.
+   *
+   * This is a user-initiated jump (like an anchor link), not scroll
+   * interference — it only ever runs on click, never while scrolling.
+   */
+  const scrollToCard = (index) => {
+    const el = sectionRef.current
+    if (!el) return
+    const sectionTop = el.getBoundingClientRect().top + window.scrollY
+    const pinnedRange = el.offsetHeight - window.innerHeight
+    const p = clamp01(fullyOpenAt(index, TUNING) / units)
+    window.scrollTo({
+      top: Math.round(sectionTop + p * pinnedRange),
+      behavior: 'smooth',
+    })
+  }
+
   return (
     <section
       ref={sectionRef}
       className="relative"
-      style={{ height: `calc(100svh + ${units * TUNING.UNIT_VH}svh)` }}
+      style={{ height: `calc(100svh + ${units * metrics.unitPx}px)` }}
     >
       <div className="sticky top-0 h-[100svh] overflow-hidden px-5 sm:px-8 lg:px-12">
         <div className="relative mx-auto h-full w-full max-w-[1400px]">
@@ -229,6 +267,7 @@ function PinnedStack({ metrics }) {
               total={works.length}
               progress={scrollYProgress}
               metrics={metrics}
+              onActivate={scrollToCard}
             />
           ))}
         </div>
@@ -340,9 +379,16 @@ export default function StackedWorks() {
       return Math.max(TUNING.CARD_MIN_H, Math.round(bottom - yDock[k]))
     })
 
+    // Every card travels exactly this far (waitTop − TOP_PAD; the k * headerH
+    // terms cancel). Spending the same number of scroll pixels on that travel
+    // is what makes the deck move 1:1 with the wheel at SCROLL_RATIO = 1.
+    const travel = waitTop - TUNING.TOP_PAD
+    const unitPx = Math.max(1, Math.round(travel * TUNING.SCROLL_RATIO))
+
     return {
       headerH,
       waitTop,
+      unitPx,
       yWait,
       yDock,
       cardH,
