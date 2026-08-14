@@ -1,5 +1,5 @@
 /**
- * <Intro /> — heading, bio and the "selected works" label.
+ * <Intro /> — name/role line, heading and the "selected works" label.
  *
  * Presentational only. It carries no scroll logic of its own because the two
  * layouts animate it very differently:
@@ -26,17 +26,7 @@ export default function Intro({ className = '' }) {
         actually open.
       </h1>
 
-      {/* Two-line subheading / bio */}
-      <p className="mt-8 max-w-2xl text-base leading-snug text-pretty text-ink/70 sm:text-lg lg:text-xl">
-        Ten years turning dense, expert-only software into products teams reach
-        for daily.{' '}
-        {/* The line break only applies from `sm` up; the explicit space above
-            keeps the two sentences apart when it's hidden. */}
-        <br className="hidden sm:block" />
-        Currently designing the research platform at Maze, from Paris.
-      </p>
-
-      <span className="pill mt-8">Selected works</span>
+      <span className="pill mt-10">Selected works</span>
     </div>
   )
 }
