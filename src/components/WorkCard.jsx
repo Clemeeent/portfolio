@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  motion,
-  useMotionTemplate,
-  useMotionValueEvent,
-  useTransform,
-} from 'framer-motion'
+import { motion, useMotionValueEvent, useTransform } from 'framer-motion'
 import PreviewSurface from './PreviewSurface'
 
 /**
@@ -26,8 +21,8 @@ import PreviewSurface from './PreviewSurface'
  *   height       px — a number (desktop, fixed) or a MotionValue (mobile, animated)
  *   headerH      px height of the header strip: the sliver left visible when
  *                the next card covers this one
- *   openness     MotionValue<number> 0..1 — cosmetic only (↗ button, shadow
- *                depth). On desktop the actual reveal is geometric.
+ *   openness     MotionValue<number> 0..1 — cosmetic only (the ↗ button). On
+ *                desktop the actual reveal is geometric.
  *   fadeContent  fade the excerpt in with `openness`. Desktop passes false:
  *                there the excerpt is revealed by uncovering, and fading it
  *                while it slides would fight that.
@@ -54,13 +49,8 @@ export default function WorkCard({
     setIsOpen((prev) => (prev === next ? prev : next))
   })
 
-  // The shadow points UPWARD (negative y). Each card sits on top of the one
-  // behind it and is offset downward, so the edge that needs to read as lifted
-  // is the top one. This is what sells the deck.
-  const shadowBlur = useTransform(openness, [0, 1], [18, 44])
-  const shadowSpread = useTransform(openness, [0, 1], [-6, -10])
-  const shadowAlpha = useTransform(openness, [0, 1], [0.07, 0.1])
-  const boxShadow = useMotionTemplate`0px ${shadowSpread}px ${shadowBlur}px rgba(22, 22, 26, ${shadowAlpha})`
+  // No drop shadow. The overlap between cards is carried by the hairline
+  // border on each card's top edge instead.
 
   // Only used when `fadeContent` is on (mobile), where the card really does
   // resize and text would otherwise appear mid-morph.
@@ -74,7 +64,7 @@ export default function WorkCard({
 
   return (
     <motion.article
-      style={{ height, boxShadow, ...style }}
+      style={{ height, ...style }}
       className={`relative overflow-hidden rounded-card border border-hairline bg-card will-change-transform ${className}`}
     >
       {/* Stretched link: the whole tile is the click target. It stays in the

@@ -139,8 +139,8 @@ function timelineUnits(total, { LEAD, SLOT, RAMP, TAIL }) {
  * reveal is a stack of `translateY`s: no layout, no repaint of card content,
  * just the compositor moving opaque layers over one another.
  *
- * `openness` is therefore cosmetic here — it drives the ↗ button and how deep
- * the shadow sits, not the geometry.
+ * `openness` is therefore cosmetic here — it drives the ↗ button, not the
+ * geometry.
  */
 function ScrollDrivenCard({ work, index, total, progress, metrics }) {
   const { headerH, units, yWait, yDock, cardH } = metrics

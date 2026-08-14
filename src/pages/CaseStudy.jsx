@@ -210,7 +210,7 @@ export default function CaseStudy() {
           <div className="mx-auto w-full max-w-[1400px]">
             <Link
               to={`/work/${next.slug}`}
-              className="group flex flex-col gap-6 rounded-block border border-hairline bg-card p-6 transition-shadow hover:shadow-[0_20px_44px_rgba(22,22,26,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-9"
+              className="group flex flex-col gap-6 rounded-block border border-hairline bg-card p-6 transition-colors hover:border-muted/50 sm:flex-row sm:items-center sm:justify-between sm:p-9"
             >
               <div>
                 <span className="text-xs tracking-[0.14em] text-muted uppercase">
