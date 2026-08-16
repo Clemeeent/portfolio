@@ -12,6 +12,7 @@
   --color-muted: #8b8b93; /* years, clients, meta */
   --color-hairline: #e4e3e0; /* dividers + card borders */
   --color-chip: #e3e2de; /* inline highlight behind a chip */
+  --color-rule: #1c1c20; /* the hard full-bleed dividers between rows */
 
   --radius-card: 1.25rem;
   --radius-block: 1.75rem;
@@ -40,9 +41,10 @@ body {
   line-height: 0.95;
 }
 
-/* Small uppercase pill label. */
+/* Small outlined label. Lowercase and near-black, so it reads as a marker in
+   the page rather than a piece of UI chrome. */
 .pill {
-  @apply inline-flex items-center gap-2 rounded-full border border-hairline bg-card/70 px-3.5 py-1.5 text-[11px] font-medium tracking-[0.14em] text-muted uppercase;
+  @apply inline-flex items-center gap-2 rounded-full border border-ink/75 px-4 py-1 text-[13px] font-medium text-ink;
 }
 
 /* ---------------------------------------------------------------------------
@@ -133,6 +135,35 @@ body {
   font-weight: 400;
   letter-spacing: -0.01em;
   line-height: 1.35;
+}
+
+/* ---------------------------------------------------------------------------
+   TYPE VARIANTS
+
+   Three proposals for how the serif and the sans divide up the page, switched
+   by `data-type` on <html> (see src/lib/typeVariants.js). The default —
+   `contrast` — is the base styling above: serif sentence, sans list titles.
+--------------------------------------------------------------------------- */
+
+/* One family throughout: the list titles join the intro in the serif. */
+:root[data-type='editorial'] .work-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+/* No serif anywhere. The chips lose their optical size correction too, since
+   that only exists to make sans match the serif around it. */
+:root[data-type='grotesk'] .sentence {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: -0.032em;
+  line-height: 1.22;
+}
+
+:root[data-type='grotesk'] .chip {
+  font-size: 1em;
+  font-weight: 500;
 }
 
 @media (prefers-reduced-motion: reduce) {

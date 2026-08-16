@@ -13,8 +13,10 @@ import {
   useViewportHeight,
 } from '../lib/hooks'
 import Intro from './Intro'
+import TypeSwitcher from './TypeSwitcher'
 import Wordmark from './Wordmark'
 import WorkCard from './WorkCard'
+import { useTypeVariant } from '../lib/typeVariants'
 
 /* ===========================================================================
    TUNING — every number that shapes the reveal lives here.
@@ -97,9 +99,9 @@ const TUNING = {
   // The header strip is both the visible sliver of a covered card AND the
   // offset between cards in the deck. Everything below the strip is hidden by
   // the next card, which is what makes the overlap read as stacked paper.
-  HEADER_RATIO: 0.093, // as a share of viewport height
-  HEADER_MIN: 60,
-  HEADER_MAX: 88,
+  HEADER_RATIO: 0.108, // as a share of viewport height
+  HEADER_MIN: 66,
+  HEADER_MAX: 104,
   WAIT_TOP_MIN_RATIO: 0.3, // never let the waiting deck start above this
   CARD_MIN_H: 220, // px floor for a card
 }
@@ -251,18 +253,23 @@ function PinnedStack({ metrics }) {
       className="relative"
       style={{ height: `calc(100svh + ${units * metrics.unitPx}px)` }}
     >
-      <div className="sticky top-0 h-[100svh] overflow-hidden px-5 sm:px-8 lg:px-12">
-        <div className="relative mx-auto h-full w-full max-w-[1400px]">
+      {/* Full-bleed: the cards run edge to edge and hold their own gutters, so
+          the rules between them span the whole viewport. */}
+      <div className="sticky top-0 h-[100svh] overflow-hidden">
+        <div className="relative h-full w-full">
           {/* Pinned to the top of the viewport, above every card, and outside
               the intro's fading layer so it never blurs away. */}
-          <Wordmark className="absolute top-6 left-0 z-40" />
+          <Wordmark className="absolute top-6 left-5 z-40 sm:left-8 lg:left-12" />
 
-          {/* Intro layer — occupies the space above the waiting stack */}
+          {/* Intro layer — a tinted panel above the deck, closed off with the
+              same rule the cards use, so the two read as one system. */}
           <motion.div
             style={{ opacity: introOpacity, filter: introFilter, height: waitTop }}
-            className="pointer-events-none absolute inset-x-0 top-0 z-0 flex flex-col justify-center pb-8"
+            className="pointer-events-none absolute inset-x-0 top-0 z-0 flex flex-col justify-center bg-paper"
           >
-            <Intro />
+            <div className="mx-auto w-full max-w-[1400px] px-5 sm:px-8 lg:px-12">
+              <Intro />
+            </div>
           </motion.div>
 
           {/* Cards. Absolutely positioned; every position comes from scroll. */}
@@ -314,8 +321,8 @@ function StaticWorks({ metrics }) {
         </div>
       </section>
 
-      <section className="px-5 pb-16 sm:px-8">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2.5">
+      <section className="border-b border-rule pb-0">
+        <div className="flex w-full flex-col">
           {works.map((work) => (
             <WorkCard
               key={work.slug}
@@ -348,6 +355,7 @@ function StaticWorks({ metrics }) {
  * sticky`, so the page scrolls natively at 1:1 the whole way down.
  */
 export default function StackedWorks() {
+  const [typeVariant, setTypeVariant] = useTypeVariant()
   const viewportH = useViewportHeight()
   const isSmall = useMediaQuery('(max-width: 767px)')
   const reduceMotion = usePrefersReducedMotion()
@@ -409,6 +417,15 @@ export default function StackedWorks() {
     }
   }, [viewportH])
 
-  if (reduceMotion || isSmall) return <StaticWorks metrics={metrics} />
-  return <PinnedStack metrics={metrics} />
+  return (
+    <>
+      {reduceMotion || isSmall ? (
+        <StaticWorks metrics={metrics} />
+      ) : (
+        <PinnedStack metrics={metrics} />
+      )}
+      {/* Scratch control for comparing the type proposals — remove with the file. */}
+      <TypeSwitcher variant={typeVariant} onChange={setTypeVariant} />
+    </>
+  )
 }

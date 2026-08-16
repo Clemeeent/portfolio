@@ -67,6 +67,37 @@ Which field goes where:
 - `src` on a `figure` block → that figure
 - `image` on a feature → that block's background
 
+### Type variants
+
+Three proposals for how the serif and the sans divide the page. The layout is
+identical in all three — what changes is which text is set in which family,
+which is the whole question of whether the page reads as one voice or two.
+
+| Variant | What it is |
+| --- | --- |
+| `contrast` | Serif sentence, sans list. Two voices, deliberately. **Default.** |
+| `editorial` | Serif throughout, list titles included. One voice, most consistent. |
+| `grotesk` | No serif at all. The chips carry the emphasis on their own. |
+
+Switch bottom-right, or by URL: `/?type=editorial`. Applied as `data-type` on
+`<html>`, so the case-study pages pick it up too; the rules live at the bottom
+of `index.css`.
+
+**Scaffolding, not a feature.** To ship one: set `DEFAULT` in
+`src/lib/typeVariants.js`, delete `TypeSwitcher.jsx` and its use in
+`StackedWorks.jsx`, and drop the variants you don't want.
+
+One thing the switcher makes visible: `grotesk` wraps the intro sentence onto a
+third line, because the sans sets wider than the serif at the same measure.
+
+### Full-bleed rows
+
+Cards have no rounding, no shadow and no side border. Their only edge is a hard
+rule along the top, which is what reads as the divider between rows once
+they're stacked. Content inside is held to the same max-width and gutters as
+the intro, so the columns line up even though the cards themselves run edge to
+edge.
+
 ### The intro chips
 
 Phrases in the intro sentence are `<Chip>`s: bold sans on a grey highlight,

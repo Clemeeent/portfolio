@@ -41,7 +41,7 @@ export default function Intro({ className = '' }) {
         </Chip>
       </h1>
 
-      <span className="pill mt-10">Selected works</span>
+      <span className="pill mt-10">selected works</span>
     </div>
   )
 }
