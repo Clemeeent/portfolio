@@ -109,6 +109,26 @@ docked slot down to where the next card waits, which is exactly the space left
 uncovered when it's the active one. Everything is computed from the viewport, so
 the deck fits any window size.
 
+### Trying the four looks
+
+The scroll mechanic is the same in all of them; what changes is the typography
+and how a project's client is treated — which is where the homepage either
+agrees with the intro sentence or doesn't.
+
+| Variant | What it is |
+| --- | --- |
+| `deck` | Sans titles, plain client, flush stack. |
+| `folders` | Each card's header indented further than the one above, so the run reads as filed tabs. |
+| `editorial` | Serif titles and the client as a soft grey chip — matches the intro. |
+| `gradient` | Serif titles, client as a vivid gradient pill. |
+
+Switch with the control bottom-right, or by URL: `/?layout=editorial`. The
+choice is remembered in localStorage.
+
+**This is scaffolding, not a feature.** To ship one look: set `DEFAULT` in
+`src/lib/layout.js`, delete `LayoutSwitcher.jsx` and its use in
+`StackedWorks.jsx`, and drop the variants you don't want from `LAYOUTS`.
+
 ### Clicking a card
 
 A tile does one of two things depending on whether it's the card in focus:

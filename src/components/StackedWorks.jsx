@@ -13,7 +13,9 @@ import {
   useViewportHeight,
 } from '../lib/hooks'
 import Intro from './Intro'
+import LayoutSwitcher from './LayoutSwitcher'
 import WorkCard from './WorkCard'
+import { useLayoutVariant } from '../lib/layout'
 
 /* ===========================================================================
    TUNING — every number that shapes the reveal lives here.
@@ -158,7 +160,7 @@ function fullyOpenAt(k, { SLOT, RAMP }) {
  * `openness` is therefore cosmetic here — it drives the ↗ button, not the
  * geometry.
  */
-function ScrollDrivenCard({ work, index, total, progress, metrics, onActivate }) {
+function ScrollDrivenCard({ work, index, total, progress, metrics, onActivate, variant }) {
   const { headerH, units, yWait, yDock, cardH } = metrics
 
   const y = useTransform(progress, (p) =>
@@ -172,6 +174,8 @@ function ScrollDrivenCard({ work, index, total, progress, metrics, onActivate })
   return (
     <WorkCard
       work={work}
+      index={index}
+      variant={variant}
       openness={openness}
       height={cardH[index]}
       headerH={headerH}
@@ -193,7 +197,7 @@ function ScrollDrivenCard({ work, index, total, progress, metrics, onActivate })
   )
 }
 
-function PinnedStack({ metrics }) {
+function PinnedStack({ metrics, variant }) {
   const sectionRef = useRef(null)
 
   // Progress 0 → 1 across the pinned range. The section starts at the top of
@@ -255,7 +259,7 @@ function PinnedStack({ metrics }) {
             style={{ opacity: introOpacity, filter: introFilter, height: waitTop }}
             className="pointer-events-none absolute inset-x-0 top-0 z-0 flex flex-col justify-center pb-8"
           >
-            <Intro />
+            <Intro variant={variant} />
           </motion.div>
 
           {/* Cards. Absolutely positioned; every position comes from scroll. */}
@@ -268,6 +272,7 @@ function PinnedStack({ metrics }) {
               progress={scrollYProgress}
               metrics={metrics}
               onActivate={scrollToCard}
+              variant={variant}
             />
           ))}
         </div>
@@ -294,22 +299,24 @@ function PinnedStack({ metrics }) {
  *
  * A static list has neither problem, and reads perfectly well on a phone.
  */
-function StaticWorks({ metrics }) {
+function StaticWorks({ metrics, variant }) {
   // WorkCard wants a MotionValue; this one is a constant and never changes.
   const alwaysOpen = useMotionValue(1)
 
   return (
     <>
       <section className="px-5 pt-24 pb-16 sm:px-8">
-        <Intro className="mx-auto w-full max-w-[1400px]" />
+        <Intro variant={variant} className="mx-auto w-full max-w-[1400px]" />
       </section>
 
       <section className="px-5 pb-16 sm:px-8">
         <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2.5">
-          {works.map((work) => (
+          {works.map((work, i) => (
             <WorkCard
               key={work.slug}
               work={work}
+              index={i}
+              variant={variant}
               openness={alwaysOpen}
               height={metrics.staticCardH}
               headerH={metrics.headerH}
@@ -338,6 +345,7 @@ function StaticWorks({ metrics }) {
  * sticky`, so the page scrolls natively at 1:1 the whole way down.
  */
 export default function StackedWorks() {
+  const [variant, setVariant] = useLayoutVariant()
   const viewportH = useViewportHeight()
   const isSmall = useMediaQuery('(max-width: 767px)')
   const reduceMotion = usePrefersReducedMotion()
@@ -399,6 +407,15 @@ export default function StackedWorks() {
     }
   }, [viewportH])
 
-  if (reduceMotion || isSmall) return <StaticWorks metrics={metrics} />
-  return <PinnedStack metrics={metrics} />
+  return (
+    <>
+      {reduceMotion || isSmall ? (
+        <StaticWorks metrics={metrics} variant={variant} />
+      ) : (
+        <PinnedStack metrics={metrics} variant={variant} />
+      )}
+      {/* Scratch control for comparing the variants — remove with the file. */}
+      <LayoutSwitcher variant={variant} onChange={setVariant} />
+    </>
+  )
 }
