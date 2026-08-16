@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValueEvent, useTransform } from 'framer-motion'
-import Chip from './Chip'
 import PreviewSurface from './PreviewSurface'
-import { LAYOUTS, gradientFor } from '../lib/layout'
 
 /**
  * <WorkCard /> — one project: a header strip (year · title · client) above an
@@ -35,17 +33,14 @@ import { LAYOUTS, gradientFor } from '../lib/layout'
  */
 export default function WorkCard({
   work,
-  index = 0,
   height,
   headerH,
   openness,
   fadeContent = true,
   onActivate,
-  variant = 'deck',
   style,
   className = '',
 }) {
-  const look = LAYOUTS[variant] ?? LAYOUTS.deck
   // `isOpen` mirrors `openness` into React state, but only at the halfway mark,
   // so we can flip non-animatable things (cursor, aria, tab order) once per
   // card instead of on every frame.
@@ -105,42 +100,17 @@ export default function WorkCard({
                 covered by the next one in the deck ---- */}
         <div
           className="relative flex shrink-0 items-center gap-3 pr-16 pl-5 sm:gap-5 sm:pr-20 sm:pl-7"
-          // `folders` indents each card's header a little further than the one
-          // above it, so the run of headers reads as a row of tabs rather than
-          // a column of rows. Indenting the content, not the card, keeps the
-          // deck's overlap geometry untouched.
-          style={{ height: headerH, paddingInlineStart: look.stagger ? look.stagger * index + 20 : undefined }}
+          style={{ height: headerH }}
         >
           <span className="w-10 shrink-0 text-xs tabular-nums text-muted sm:w-12 sm:text-sm">
             {work.year}
           </span>
-          <h3
-            className={`line-clamp-2 leading-tight text-ink ${
-              look.titleFont === 'serif'
-                ? 'sentence text-[17px] sm:text-xl lg:text-[26px]'
-                : 'text-[15px] font-medium tracking-[-0.01em] sm:text-lg lg:text-xl'
-            }`}
-          >
+          <h3 className="line-clamp-2 text-[15px] leading-tight font-medium tracking-[-0.01em] text-ink sm:text-lg lg:text-xl">
             {work.title}
           </h3>
-
-          {look.client === 'plain' && (
-            <span className="hidden shrink-0 text-sm text-muted sm:inline">
-              {work.client}
-            </span>
-          )}
-          {look.client === 'chip' && (
-            <span className="hidden shrink-0 text-base sm:inline">
-              <Chip>{work.client}</Chip>
-            </span>
-          )}
-          {look.client === 'gradient' && (
-            <span className="hidden shrink-0 text-base sm:inline">
-              <Chip tone="gradient" gradient={gradientFor(index)}>
-                {work.client}
-              </Chip>
-            </span>
-          )}
+          <span className="hidden shrink-0 text-sm text-muted sm:inline">
+            {work.client}
+          </span>
 
           {/* ↗ button, top-right. Decorative — the stretched link above handles
               the click. Wrapped in a plain div so Tailwind's centering

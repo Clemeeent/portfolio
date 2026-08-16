@@ -17,9 +17,11 @@ src/
     works.js          ← selected works: rows, excerpts, full case studies
     features.js       ← full-bleed blocks (not currently on the page)
   components/
-    Intro.jsx         heading + bio, scrolls away behind the works
-    StackedWorks.jsx  all the scroll maths + the three reveal strategies
-    WorkCard.jsx      one card: collapsed row ⇄ expanded excerpt
+    Intro.jsx         name, serif intro sentence, "selected works" label
+    Chip.jsx          a phrase lifted into bold sans on a soft highlight
+    Mark.jsx          the little graphic shapes that sit inside chips
+    StackedWorks.jsx  all the scroll maths + both reveal strategies
+    WorkCard.jsx      one card: header strip above an excerpt
     FeatureBlocks.jsx full-width sections — unused, kept for re-use
     PreviewSurface.jsx image slot, falls back to an accent gradient
     SiteFooter.jsx
@@ -108,26 +110,6 @@ Card heights are derived, not configured: a card is sized to fill from its
 docked slot down to where the next card waits, which is exactly the space left
 uncovered when it's the active one. Everything is computed from the viewport, so
 the deck fits any window size.
-
-### Trying the four looks
-
-The scroll mechanic is the same in all of them; what changes is the typography
-and how a project's client is treated — which is where the homepage either
-agrees with the intro sentence or doesn't.
-
-| Variant | What it is |
-| --- | --- |
-| `deck` | Sans titles, plain client, flush stack. |
-| `folders` | Each card's header indented further than the one above, so the run reads as filed tabs. |
-| `editorial` | Serif titles and the client as a soft grey chip — matches the intro. |
-| `gradient` | Serif titles, client as a vivid gradient pill. |
-
-Switch with the control bottom-right, or by URL: `/?layout=editorial`. The
-choice is remembered in localStorage.
-
-**This is scaffolding, not a feature.** To ship one look: set `DEFAULT` in
-`src/lib/layout.js`, delete `LayoutSwitcher.jsx` and its use in
-`StackedWorks.jsx`, and drop the variants you don't want from `LAYOUTS`.
 
 ### Clicking a card
 

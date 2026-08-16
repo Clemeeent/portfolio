@@ -77,16 +77,6 @@ body {
   margin-left: 0.32em;
 }
 
-/* Vivid gradient pill. Fully round, no mark — the shape does the work.
-   Black text over the gradient, which is why the ramps in lib/layout.js stay
-   in the light half of each hue. */
-.chip-gradient {
-  border-radius: 999px;
-  padding: 0.14em 0.6em;
-  color: var(--color-ink);
-  background-color: transparent;
-}
-
 /* The serif sentence the chips sit in. */
 .sentence {
   font-family: var(--font-serif);

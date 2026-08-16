@@ -1,13 +1,11 @@
 import Chip from './Chip'
-import { LAYOUTS, gradientFor } from '../lib/layout'
 
 /**
  * <Intro /> — the name, the intro sentence and the "selected works" label.
  *
- * The sentence is set in a serif with key phrases chipped out, so the facts
- * that matter (role, place, work) carry the emphasis. The chips take their tone
- * from the active layout variant: soft grey with a mark, or a vivid gradient
- * pill. Swap any `mark` below for another name in Mark.jsx.
+ * The sentence is set in a serif with key phrases chipped out in bold sans, so
+ * the facts that matter (role, place, work) carry the emphasis. Swap any `mark`
+ * below for another name in Mark.jsx.
  *
  * Presentational only — it carries no scroll logic, because the two layouts
  * animate it very differently:
@@ -16,17 +14,7 @@ import { LAYOUTS, gradientFor } from '../lib/layout'
  *             first card rises over it (it never scrolls away)
  *   mobile  — it scrolls off normally above the static list
  */
-export default function Intro({ variant = 'deck', className = '' }) {
-  const tone = (LAYOUTS[variant] ?? LAYOUTS.deck).chipTone
-
-  // In gradient tone the mark is dropped — the pill's colour is the emphasis,
-  // and a mark on top of a gradient reads as clutter.
-  const chip = (children, mark, i) => (
-    <Chip tone={tone} mark={tone === 'gradient' ? undefined : mark} gradient={gradientFor(i)}>
-      {children}
-    </Chip>
-  )
-
+export default function Intro({ className = '' }) {
   return (
     <div className={className}>
       {/* The only place the name appears on the homepage. It sits inside the
@@ -38,11 +26,11 @@ export default function Intro({ variant = 'deck', className = '' }) {
       </p>
 
       <h1 className="sentence max-w-[22ch] text-[7vw] text-ink sm:max-w-none sm:text-[4.4vw] lg:text-[2.9vw]">
-        {chip('Product designer', 'rings', 0)} based in{' '}
-        {chip('Paris, France', 'spark', 1)}
+        <Chip mark="rings">Product designer</Chip> based in{' '}
+        <Chip mark="spark">Paris, France</Chip>
         <br className="hidden sm:block" /> Building{' '}
-        {chip('research tools', 'eye', 2)} at {chip('Maze', 'spiral', 3)} and
-        open to {chip('new work', 'send', 4)}
+        <Chip mark="eye">research tools</Chip> at <Chip mark="spiral">Maze</Chip>{' '}
+        and open to <Chip mark="send">new work</Chip>
       </h1>
 
       <span className="pill mt-10">Selected works</span>

@@ -1,37 +1,13 @@
 import Mark from './Mark'
 
 /**
- * <Chip> — a phrase lifted out of running text into bold sans on a highlight.
+ * <Chip> — a phrase lifted out of the serif sentence into bold sans on a soft
+ * grey highlight, with an optional graphic mark after it.
  *
- * Two tones, from the two references:
- *
- *   soft      grey rounded rectangle, small radius, usually with a Mark after
- *             the text (lfe.org)
- *   gradient  fully round pill with a vivid gradient fill and no mark; the
- *             shape carries the emphasis instead (nngroup.com)
- *
- * Both are `display: inline` boxes rather than flex ones — see the note in
- * index.css for why that matters for baseline alignment.
+ * Styling lives in `.chip` in index.css — see the note there on why it's an
+ * inline box rather than a flex one (baseline alignment with the serif).
  */
-export default function Chip({
-  children,
-  mark,
-  tone = 'soft',
-  gradient,
-  className = '',
-}) {
-  if (tone === 'gradient') {
-    const [from, to] = gradient ?? ['#b6a5f7', '#35c6a6']
-    return (
-      <span
-        className={`chip chip-gradient ${className}`}
-        style={{ backgroundImage: `linear-gradient(100deg, ${from}, ${to})` }}
-      >
-        {children}
-      </span>
-    )
-  }
-
+export default function Chip({ children, mark, className = '' }) {
   return (
     <span className={`chip ${className}`}>
       {children}
