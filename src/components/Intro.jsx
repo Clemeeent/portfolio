@@ -1,7 +1,9 @@
 import Chip from './Chip'
+import { CHIP_GRADIENTS } from '../lib/gradients'
 
 /**
- * <Intro /> — the name, the intro sentence and the "selected works" label.
+ * <Intro /> — the intro sentence and the "selected works" label. The name
+ * lives in <Wordmark />, pinned to the top of the viewport by StackedWorks.
  *
  * The sentence is set in a serif with key phrases chipped out in bold sans, so
  * the facts that matter (role, place, work) carry the emphasis. Swap any `mark`
@@ -17,20 +19,26 @@ import Chip from './Chip'
 export default function Intro({ className = '' }) {
   return (
     <div className={className}>
-      {/* The only place the name appears on the homepage. It sits inside the
-          intro layer, so it fades out with the sentence as the first card
-          rises — move it out into a persistent header if you'd rather it stay
-          on screen (that needs TOP_PAD in StackedWorks raised to make room). */}
-      <p className="mb-7 text-sm font-medium tracking-[-0.01em] text-ink sm:text-[15px]">
-        Clément Lebau
-      </p>
-
       <h1 className="sentence max-w-[22ch] text-[7vw] text-ink sm:max-w-none sm:text-[4.4vw] lg:text-[2.9vw]">
-        <Chip mark="rings">Product designer</Chip> based in{' '}
-        <Chip mark="spark">Paris, France</Chip>
+        <Chip mark="rings" gradient={CHIP_GRADIENTS[0]}>
+          Senior product designer
+        </Chip>{' '}
+        based in{' '}
+        <Chip mark="spark" gradient={CHIP_GRADIENTS[1]}>
+          Paris, France
+        </Chip>
         <br className="hidden sm:block" /> Building{' '}
-        <Chip mark="eye">research tools</Chip> at <Chip mark="spiral">Maze</Chip>{' '}
-        and open to <Chip mark="send">new work</Chip>
+        <Chip mark="eye" gradient={CHIP_GRADIENTS[2]}>
+          research tools
+        </Chip>{' '}
+        at{' '}
+        <Chip mark="spiral" gradient={CHIP_GRADIENTS[3]}>
+          Maze
+        </Chip>{' '}
+        and open to{' '}
+        <Chip mark="send" gradient={CHIP_GRADIENTS[4]}>
+          new work
+        </Chip>
       </h1>
 
       <span className="pill mt-10">Selected works</span>

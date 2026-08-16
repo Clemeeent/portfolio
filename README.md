@@ -17,9 +17,11 @@ src/
     works.js          ← selected works: rows, excerpts, full case studies
     features.js       ← full-bleed blocks (not currently on the page)
   components/
-    Intro.jsx         name, serif intro sentence, "selected works" label
+    Wordmark.jsx      the name, pinned to the top of the viewport
+    Intro.jsx         serif intro sentence + "selected works" label
     Chip.jsx          a phrase lifted into bold sans on a soft highlight
     Mark.jsx          the little graphic shapes that sit inside chips
+    Illustration.jsx  one flat graphic per project (placeholders)
     StackedWorks.jsx  all the scroll maths + both reveal strategies
     WorkCard.jsx      one card: header strip above an excerpt
     FeatureBlocks.jsx full-width sections — unused, kept for re-use
@@ -50,13 +52,31 @@ are stubbed with placeholder copy right now. To add a new block type, add a
 
 ### Images
 
-Every image slot falls back to a gradient built from the item's `accent` pair, so
-nothing looks broken while the real assets are missing. Drop files in `public/`
-and set the path:
+Image slots fall back in three steps, so nothing ever looks broken:
+
+1. **`cover` / `src`** — a real image, once you have one. Drop files in
+   `public/` and set the path.
+2. **`illustration`** — the project's flat graphic from `Illustration.jsx`.
+   These are placeholders; setting `cover` overrides them entirely.
+3. **accent gradient** — a soft fallback when there's neither.
+
+Which field goes where:
 
 - `cover` on a work → the card preview + the case-study hero
+- `illustration` on a work → same two places, when `cover` is null
 - `src` on a `figure` block → that figure
 - `image` on a feature → that block's background
+
+### The intro chips
+
+Phrases in the intro sentence are `<Chip>`s: bold sans on a grey highlight,
+with a shape from `Mark.jsx` after the text. They're greyscale at rest and fade
+into a panning gradient on rollover — palette in `src/lib/gradients.js`.
+
+The gradient is a real `.chip-fill` element, not a pseudo-element. Inside an
+inline box a `z-index: -1` pseudo-element paints *behind* the chip's own
+background and never shows; two positioned children in DOM order paint
+correctly with no z-index at all.
 
 ## Tuning the scroll reveal
 

@@ -1,13 +1,18 @@
+import Illustration from './Illustration'
+
 /**
- * The image slot used by cards, feature blocks and case-study figures.
+ * The image slot used by cards, the case-study hero and case-study figures.
  *
- * Drop a real image in by setting `src` (public/ path or an import). Until then
- * it renders a soft accent gradient with a faint grid so the layout reads as
- * finished rather than broken.
+ * Three levels of fallback, in order:
+ *
+ *   1. `src`          a real image, once you have one
+ *   2. `illustration` the project's flat graphic (see Illustration.jsx)
+ *   3. accent gradient  a soft placeholder, so nothing ever looks broken
  */
 export default function PreviewSurface({
   src,
   alt = '',
+  illustration,
   accent = ['#eceaf6', '#cfcae4'],
   className = '',
   label,
@@ -20,6 +25,14 @@ export default function PreviewSurface({
         loading="lazy"
         className={`h-full w-full object-cover ${className}`}
       />
+    )
+  }
+
+  if (illustration) {
+    return (
+      <div className={`h-full w-full ${className}`}>
+        <Illustration name={illustration} />
+      </div>
     )
   }
 

@@ -13,6 +13,7 @@ import {
   useViewportHeight,
 } from '../lib/hooks'
 import Intro from './Intro'
+import Wordmark from './Wordmark'
 import WorkCard from './WorkCard'
 
 /* ===========================================================================
@@ -85,7 +86,9 @@ const TUNING = {
   INTRO_FADE_TO: 0.7, // unit by which it is fully gone (card 0 covers it)
   INTRO_BLUR: 10, // px of blur at full fade
 
-  TOP_PAD: 24, // px above the first docked card
+  TOP_PAD: 68, // px above the first docked card. Also the room reserved for
+  //             <Wordmark /> at the top of the viewport — raise both together
+  //             if that ever grows into a full header.
   BOTTOM_PAD: 28, // px below the last card when it is active
   PEEK: 44, // px of the LAST waiting card left visible on first paint.
   //          Raise it to show more of the bottom card, lower it to give the
@@ -250,6 +253,10 @@ function PinnedStack({ metrics }) {
     >
       <div className="sticky top-0 h-[100svh] overflow-hidden px-5 sm:px-8 lg:px-12">
         <div className="relative mx-auto h-full w-full max-w-[1400px]">
+          {/* Pinned to the top of the viewport, above every card, and outside
+              the intro's fading layer so it never blurs away. */}
+          <Wordmark className="absolute top-6 left-0 z-40" />
+
           {/* Intro layer — occupies the space above the waiting stack */}
           <motion.div
             style={{ opacity: introOpacity, filter: introFilter, height: waitTop }}
@@ -300,8 +307,11 @@ function StaticWorks({ metrics }) {
 
   return (
     <>
-      <section className="px-5 pt-24 pb-16 sm:px-8">
-        <Intro className="mx-auto w-full max-w-[1400px]" />
+      <section className="px-5 pt-10 pb-16 sm:px-8">
+        <div className="mx-auto w-full max-w-[1400px]">
+          <Wordmark className="mb-16" />
+          <Intro />
+        </div>
       </section>
 
       <section className="px-5 pb-16 sm:px-8">

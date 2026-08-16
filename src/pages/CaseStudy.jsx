@@ -166,6 +166,7 @@ export default function CaseStudy() {
           <div className="h-[58svh] min-h-[320px] overflow-hidden rounded-block border border-hairline bg-card">
             <PreviewSurface
               src={work.cover}
+              illustration={work.illustration}
               accent={work.accent}
               alt={work.title}
               label={work.client}

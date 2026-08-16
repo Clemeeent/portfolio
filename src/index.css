@@ -59,6 +59,7 @@ body {
    look equal.
 --------------------------------------------------------------------------- */
 .chip {
+  position: relative;
   background-color: var(--color-chip);
   border-radius: 0.3em;
   padding: 0.1em 0.36em;
@@ -67,6 +68,55 @@ body {
   font-weight: 600;
   letter-spacing: -0.02em;
   white-space: nowrap; /* never let a chip break across two lines */
+
+  /* The intro layer is pointer-events-none so it never steals clicks from the
+     cards rising over it — the chips opt back in so they can be hovered. */
+  pointer-events: auto;
+
+  --chip-from: #b6a5f7;
+  --chip-to: #35c6a6;
+}
+
+/* Grey → colour on rollover.
+   The gradient is its own layer rather than a background on the chip because
+   `background-image` is not interpolable — there is no way to transition from
+   a flat grey straight into a gradient. Fading a layer over the top is.
+
+   `.chip-fill` and `.chip-label` are both positioned and appear in that order
+   in the DOM, so the label paints over the fill and the fill paints over the
+   chip's background. No z-index involved: inside an inline box a negative
+   z-index layer lands *behind* the background and never shows at all. */
+.chip-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    100deg,
+    var(--chip-from),
+    var(--chip-to),
+    var(--chip-from)
+  );
+  background-size: 220% 100%;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.chip-label {
+  position: relative;
+}
+
+.chip:hover .chip-fill {
+  opacity: 1;
+  /* The third stop repeats the first, so the pan loops seamlessly. Killed
+     automatically under prefers-reduced-motion by the rule at the bottom of
+     this file — the colour still arrives, it just stops drifting. */
+  animation: chip-pan 3.2s linear infinite;
+}
+
+@keyframes chip-pan {
+  to {
+    background-position: 220% 50%;
+  }
 }
 
 .chip svg {

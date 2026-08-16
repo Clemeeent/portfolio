@@ -168,6 +168,7 @@ export default function WorkCard({
           <div className="relative min-h-0 overflow-hidden rounded-xl bg-paper">
             <PreviewSurface
               src={work.cover}
+              illustration={work.illustration}
               accent={work.accent}
               alt={`${work.title} preview`}
               label={work.client}
