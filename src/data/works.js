@@ -12,6 +12,10 @@
    title     string   near-black, the headline of the row
    client    string   shown muted to the right of the title
    slug      string   URL segment → /work/<slug>. Must be unique.
+   mark      string   name of a shape from src/components/Mark.jsx — the
+                      project's little graphic identity, shown in the card
+                      header. Available: spark, seal, spiral, burst, rings,
+                      wave, send, rosette, eye, blob, half, stack.
    excerpt   string   1–2 sentences, only visible in the expanded card state
    tags      string[] small meta chips in the expanded card + case study header
    role      string   your role, case-study header only
@@ -37,6 +41,7 @@ export const works = [
     title: 'Making research accessible from anywhere',
     client: 'Maze',
     slug: 'research-from-anywhere',
+    mark: 'burst',
     excerpt:
       'Research insights were locked inside a desktop tool only researchers opened. I rebuilt the surface so any teammate could reach a study, a clip or a finding from wherever they already work.',
     tags: ['Product design', 'Design system', '0 → 1'],
@@ -93,6 +98,7 @@ export const works = [
     title: 'Enabling user testing on any device',
     client: 'Maze',
     slug: 'testing-on-any-device',
+    mark: 'rings',
     excerpt:
       'Mobile was half the traffic our customers cared about and none of the traffic we could test. This is how a desktop-only testing engine learned to run on phones and tablets.',
     tags: ['Product design', 'Mobile', 'Research ops'],
@@ -135,6 +141,7 @@ export const works = [
     title: 'Goal-based and Free explore usability testing',
     client: 'Maze',
     slug: 'goal-based-free-explore',
+    mark: 'half',
     excerpt:
       'Two new test types that let researchers choose between a measured path and an open one — without forcing them to learn two different products.',
     tags: ['Product design', 'Information architecture'],
@@ -164,6 +171,7 @@ export const works = [
     title: 'Distributing public funds across UE',
     client: 'Octave Octave',
     slug: 'public-funds-ue',
+    mark: 'rosette',
     excerpt:
       'A distribution platform for European public funding, designed for civil servants who audit every step and applicants who had never seen a grant form before.',
     tags: ['Service design', 'Complex forms', 'Accessibility'],
@@ -196,6 +204,7 @@ export const works = [
     title: 'Celebrating 70 years of INRA',
     client: 'Werkstatt',
     slug: 'inra-70-years',
+    mark: 'wave',
     excerpt:
       'An anniversary microsite turning seven decades of agricultural research into a timeline people actually scrolled to the end of.',
     tags: ['Art direction', 'Editorial', 'Motion'],

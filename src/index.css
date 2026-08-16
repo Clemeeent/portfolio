@@ -11,6 +11,7 @@
   --color-ink: #16161a; /* near-black, titles */
   --color-muted: #8b8b93; /* years, clients, meta */
   --color-hairline: #e4e3e0; /* dividers + card borders */
+  --color-chip: #e3e2de; /* inline highlight behind a chip */
 
   --radius-card: 1.25rem;
   --radius-block: 1.75rem;
@@ -18,6 +19,10 @@
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto,
     'Helvetica Neue', Arial, sans-serif;
+
+  /* Body serif for the intro sentence. `ui-serif` resolves to New York on
+     macOS and a decent system serif elsewhere — no webfont, no network. */
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
 }
 
 body {
@@ -38,6 +43,46 @@ body {
 /* Small uppercase pill label. */
 .pill {
   @apply inline-flex items-center gap-2 rounded-full border border-hairline bg-card/70 px-3.5 py-1.5 text-[11px] font-medium tracking-[0.14em] text-muted uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Inline chips: a phrase lifted out of a serif sentence into bold sans on a
+   soft highlight, usually with a Mark after it.
+
+   Deliberately `display: inline`, not inline-flex. An inline box keeps the
+   chip's text on the same baseline as the serif around it; a flex box would
+   sit on its own baseline and make the line wobble. The mark inside is nudged
+   with vertical-align instead.
+
+   `font-size: 0.86em` is optical, not arbitrary — a grotesque set at the same
+   size as a serif reads noticeably larger, so it needs taking down slightly to
+   look equal.
+--------------------------------------------------------------------------- */
+.chip {
+  background-color: var(--color-chip);
+  border-radius: 0.3em;
+  padding: 0.1em 0.36em;
+  font-family: var(--font-sans);
+  font-size: 0.86em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap; /* never let a chip break across two lines */
+}
+
+.chip svg {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.19em;
+  margin-left: 0.32em;
+}
+
+/* The serif sentence the chips sit in. */
+.sentence {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 @media (prefers-reduced-motion: reduce) {
