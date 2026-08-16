@@ -34,7 +34,7 @@ export default function Intro({ className = '' }) {
   return (
     <div className={className}>
       <h1 className="sentence max-w-[22ch] text-[7vw] text-ink sm:max-w-none sm:text-[4.4vw] lg:text-[2.9vw]">
-        Clément Lebau is a <Chip mark="rings">product designer</Chip> based in{' '}
+        <Chip mark="rings">Product designer</Chip> based in{' '}
         <Chip mark="spark">Paris, France</Chip>
         <br className="hidden sm:block" /> Building{' '}
         <Chip mark="eye">research tools</Chip> at <Chip mark="spiral">Maze</Chip>{' '}

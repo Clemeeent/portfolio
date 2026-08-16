@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValueEvent, useTransform } from 'framer-motion'
-import Mark from './Mark'
 import PreviewSurface from './PreviewSurface'
 
 /**
@@ -112,15 +111,6 @@ export default function WorkCard({
           <span className="hidden shrink-0 text-sm text-muted sm:inline">
             {work.client}
           </span>
-
-          {/* The project's graphic mark — a small identity for each piece of
-              work, echoing the chips in the intro sentence. */}
-          {work.mark && (
-            <Mark
-              name={work.mark}
-              className="size-5 shrink-0 text-muted/70 sm:size-[22px]"
-            />
-          )}
 
           {/* ↗ button, top-right. Decorative — the stretched link above handles
               the click. Wrapped in a plain div so Tailwind's centering
