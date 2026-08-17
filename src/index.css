@@ -137,35 +137,6 @@ body {
   line-height: 1.35;
 }
 
-/* ---------------------------------------------------------------------------
-   TYPE VARIANTS
-
-   Three proposals for how the serif and the sans divide up the page, switched
-   by `data-type` on <html> (see src/lib/typeVariants.js). The default —
-   `contrast` — is the base styling above: serif sentence, sans list titles.
---------------------------------------------------------------------------- */
-
-/* One family throughout: the list titles join the intro in the serif. */
-:root[data-type='editorial'] .work-title {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  letter-spacing: -0.005em;
-}
-
-/* No serif anywhere. The chips lose their optical size correction too, since
-   that only exists to make sans match the serif around it. */
-:root[data-type='grotesk'] .sentence {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  letter-spacing: -0.032em;
-  line-height: 1.22;
-}
-
-:root[data-type='grotesk'] .chip {
-  font-size: 1em;
-  font-weight: 500;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

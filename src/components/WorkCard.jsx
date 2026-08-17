@@ -109,7 +109,7 @@ export default function WorkCard({
           <span className="w-11 shrink-0 tabular-nums text-muted sm:w-14 sm:text-base">
             {work.year}
           </span>
-          <h3 className="work-title line-clamp-2 text-base leading-tight font-medium tracking-[-0.015em] text-ink sm:text-xl lg:text-2xl">
+          <h3 className="line-clamp-2 text-base leading-tight font-medium tracking-[-0.015em] text-ink sm:text-xl lg:text-2xl">
             {work.title}
           </h3>
           <span className="hidden shrink-0 text-muted sm:inline sm:text-base">

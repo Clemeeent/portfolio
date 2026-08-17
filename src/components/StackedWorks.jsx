@@ -13,10 +13,8 @@ import {
   useViewportHeight,
 } from '../lib/hooks'
 import Intro from './Intro'
-import TypeSwitcher from './TypeSwitcher'
 import Wordmark from './Wordmark'
 import WorkCard from './WorkCard'
-import { useTypeVariant } from '../lib/typeVariants'
 
 /* ===========================================================================
    TUNING — every number that shapes the reveal lives here.
@@ -355,7 +353,6 @@ function StaticWorks({ metrics }) {
  * sticky`, so the page scrolls natively at 1:1 the whole way down.
  */
 export default function StackedWorks() {
-  const [typeVariant, setTypeVariant] = useTypeVariant()
   const viewportH = useViewportHeight()
   const isSmall = useMediaQuery('(max-width: 767px)')
   const reduceMotion = usePrefersReducedMotion()
@@ -417,15 +414,6 @@ export default function StackedWorks() {
     }
   }, [viewportH])
 
-  return (
-    <>
-      {reduceMotion || isSmall ? (
-        <StaticWorks metrics={metrics} />
-      ) : (
-        <PinnedStack metrics={metrics} />
-      )}
-      {/* Scratch control for comparing the type proposals — remove with the file. */}
-      <TypeSwitcher variant={typeVariant} onChange={setTypeVariant} />
-    </>
-  )
+  if (reduceMotion || isSmall) return <StaticWorks metrics={metrics} />
+  return <PinnedStack metrics={metrics} />
 }
